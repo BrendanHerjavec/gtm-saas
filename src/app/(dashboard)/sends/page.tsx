@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { getSends, getSendStats } from "@/actions/sends";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

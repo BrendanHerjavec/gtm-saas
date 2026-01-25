@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { IntegrationsHeader } from "@/components/features/integrations/integrations-header";
 import { IntegrationCard, type Integration } from "@/components/features/integrations/integration-card";

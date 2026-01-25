@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getBudgets, getBudgetSummary } from "@/actions/budget";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
