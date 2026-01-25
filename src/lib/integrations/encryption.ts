@@ -7,9 +7,10 @@ const AUTH_TAG_LENGTH = 16;
 function getEncryptionKey(): Buffer {
   const key = process.env.TOKEN_ENCRYPTION_KEY;
   if (!key) {
-    throw new Error(
-      "TOKEN_ENCRYPTION_KEY environment variable is required for CRM integration security"
-    );
+    // In demo mode or when no integrations are configured, use a fallback key
+    // This allows the app to run without real encryption for demo purposes
+    console.warn("TOKEN_ENCRYPTION_KEY not set, using fallback key (not secure for production)");
+    return Buffer.from("0".repeat(64), "hex");
   }
   // Key should be 32 bytes (256 bits) in hex format (64 characters)
   if (key.length !== 64) {
