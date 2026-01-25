@@ -314,7 +314,12 @@ export async function convertLeadToContact(leadId: string) {
 export async function getLeadStats() {
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    return {
+      total: 0,
+      byStatus: {} as Record<LeadStatus, number>,
+      bySource: {} as Record<LeadSource, number>,
+      recentLeads: [],
+    };
   }
 
   const [total, byStatus, bySource, recentLeads] = await Promise.all([

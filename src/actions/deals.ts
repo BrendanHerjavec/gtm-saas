@@ -67,7 +67,7 @@ export async function getDeals(params?: {
 export async function getDealsByStage() {
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    return [];
   }
 
   const stages = await prisma.dealStage.findMany({
@@ -239,7 +239,15 @@ export async function getDealStages() {
 export async function getDealStats() {
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    return {
+      totalDeals: 0,
+      openDeals: 0,
+      wonDeals: 0,
+      lostDeals: 0,
+      pipelineValue: 0,
+      wonValue: 0,
+      winRate: 0,
+    };
   }
 
   const [totalDeals, openDeals, wonDeals, lostDeals, pipelineValue] = await Promise.all([

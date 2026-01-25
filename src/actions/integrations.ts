@@ -42,7 +42,7 @@ export interface IntegrationStatus {
 export async function getIntegrationStatus(): Promise<IntegrationStatus> {
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    return { connected: false };
   }
 
   const integration = await getIntegration(session.user.organizationId);

@@ -16,7 +16,7 @@ export async function getCampaigns(params?: {
 }) {
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    return { campaigns: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
   }
 
   const page = params?.page || 1;
@@ -165,7 +165,11 @@ export async function deleteCampaign(id: string) {
 export async function getCampaignStats() {
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    return {
+      total: 0,
+      byStatus: {} as Record<string, number>,
+      metrics: { sent: 0, delivered: 0, opened: 0, clicked: 0, deliveryRate: 0, openRate: 0, clickRate: 0 },
+    };
   }
 
   const [total, byStatus, aggregateStats] = await Promise.all([
