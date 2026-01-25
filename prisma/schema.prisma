@@ -1,0 +1,389 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Auth.js Models
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Multi-tenant Organization
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  recipients     Recipient[]
+  sends          Send[]
+  giftItems      GiftItem[]
+  giftCategories GiftCategory[]
+  campaigns      Campaign[]
+  budgets        Budget[]
+  activities     Activity[]
+  crmIntegration CRMIntegration?
+  vendors        Vendor[]
+}
+
+// CRM Integration - One per Organization (for syncing recipients)
+model CRMIntegration {
+  id               String    @id @default(uuid())
+  organizationId   String    @unique
+  provider         String    // "hubspot" | "salesforce" | "attio"
+  accessToken      String    @db.Text
+  refreshToken     String?   @db.Text
+  tokenExpiresAt   DateTime?
+  instanceUrl      String?
+  status           String    @default("CONNECTED")
+  lastSyncAt       DateTime?
+  lastSyncStatus   String?
+  lastSyncError    String?   @db.Text
+  webhookSecret    String?
+  webhookId        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  syncLogs     SyncLog[]
+}
+
+model SyncLog {
+  id               String    @id @default(uuid())
+  integrationId    String
+  entityType       String
+  operation        String
+  direction        String
+  status           String
+  recordsProcessed Int       @default(0)
+  recordsCreated   Int       @default(0)
+  recordsUpdated   Int       @default(0)
+  recordsSkipped   Int       @default(0)
+  recordsFailed    Int       @default(0)
+  errorMessage     String?   @db.Text
+  metadata         String?   @db.Text
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  integration CRMIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+}
+
+// User with organization membership
+model User {
+  id             String    @id @default(uuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  password       String?
+  role           String    @default("MEMBER")
+  organizationId String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  sends        Send[]
+  activities   Activity[]
+  campaigns    Campaign[]
+}
+
+// =====================
+// HIGH-TOUCH MARKETPLACE MODELS
+// =====================
+
+// Recipients - People who receive gifts/touches (synced from CRM)
+model Recipient {
+  id             String   @id @default(uuid())
+  email          String
+  firstName      String?
+  lastName       String?
+  phone          String?
+  company        String?
+  jobTitle       String?
+  linkedinUrl    String?
+  address        String?  @db.Text // JSON: { street, city, state, zip, country }
+  notes          String?  @db.Text
+  tags           String?  // Comma-separated tags
+  customFields   String?  @db.Text
+  organizationId String
+
+  // External CRM sync tracking
+  externalId     String?
+  externalSource String?   // "hubspot" | "salesforce" | "attio"
+  externalUrl    String?
+  lastSyncedAt   DateTime?
+  syncStatus     String?   @default("SYNCED")
+
+  // Gifting preferences
+  preferences    String?  @db.Text // JSON: dietary restrictions, interests, etc.
+  doNotSend      Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sends        Send[]
+  activities   Activity[]
+
+  @@index([organizationId, externalId, externalSource])
+  @@index([organizationId, email])
+}
+
+// Gift Categories
+model GiftCategory {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  icon           String?  // Lucide icon name
+  color          String?  // Hex color for UI
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  giftItems    GiftItem[]
+}
+
+// Gift Items in Catalog
+model GiftItem {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?  @db.Text
+  imageUrl       String?
+  price          Float
+  currency       String   @default("USD")
+  categoryId     String?
+  vendorId       String?
+  sku            String?
+  inStock        Boolean  @default(true)
+  isActive       Boolean  @default(true)
+
+  // Item type
+  type           String   @default("PHYSICAL") // PHYSICAL | DIGITAL | EXPERIENCE
+
+  // For experiences
+  duration       String?  // e.g., "2 hours", "1 day"
+  location       String?
+
+  // Metadata
+  tags           String?  // Comma-separated
+  customFields   String?  @db.Text
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category     GiftCategory? @relation(fields: [categoryId], references: [id])
+  vendor       Vendor?       @relation(fields: [vendorId], references: [id])
+  sends        Send[]
+}
+
+// Vendors / Fulfillment Partners
+model Vendor {
+  id             String   @id @default(uuid())
+  name           String
+  type           String   // "sendoso" | "postal" | "reachdesk" | "alyce" | "custom"
+  apiKey         String?  @db.Text
+  apiSecret      String?  @db.Text
+  webhookUrl     String?
+  isActive       Boolean  @default(true)
+  settings       String?  @db.Text // JSON config
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  giftItems    GiftItem[]
+  sends        Send[]
+}
+
+// Sends - The core action (sending gifts/touches)
+model Send {
+  id             String    @id @default(uuid())
+  recipientId    String
+  giftItemId     String?
+  campaignId     String?
+  userId         String    // Who initiated the send
+  vendorId       String?
+
+  // Send details
+  type           String    @default("GIFT") // GIFT | HANDWRITTEN_NOTE | VIDEO | EXPERIENCE | DIRECT_MAIL
+  status         String    @default("PENDING") // PENDING | PROCESSING | SHIPPED | DELIVERED | FAILED | CANCELLED
+
+  // Personalization
+  message        String?   @db.Text
+  videoUrl       String?
+
+  // Shipping info
+  shippingAddress String?  @db.Text // JSON
+  trackingNumber  String?
+  trackingUrl     String?
+  carrier         String?
+
+  // Cost tracking
+  itemCost       Float     @default(0)
+  shippingCost   Float     @default(0)
+  totalCost      Float     @default(0)
+  currency       String    @default("USD")
+
+  // Timing
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+
+  // Trigger info (what caused this send)
+  triggerType    String?   // "manual" | "campaign" | "automation" | "trigger_rule"
+  triggerData    String?   @db.Text // JSON with context
+
+  // External references
+  externalOrderId String?
+  vendorOrderId   String?
+
+  notes          String?   @db.Text
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recipient    Recipient     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  giftItem     GiftItem?     @relation(fields: [giftItemId], references: [id])
+  campaign     Campaign?     @relation(fields: [campaignId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  vendor       Vendor?       @relation(fields: [vendorId], references: [id])
+  activities   Activity[]
+
+  @@index([organizationId, status])
+  @@index([recipientId])
+  @@index([campaignId])
+}
+
+// Campaigns - Grouped sends for tracking
+model Campaign {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?   @db.Text
+  status         String    @default("DRAFT") // DRAFT | ACTIVE | PAUSED | COMPLETED
+  type           String    @default("MANUAL") // MANUAL | TRIGGERED | SCHEDULED
+
+  // Budget
+  budgetAmount   Float?
+  budgetSpent    Float     @default(0)
+
+  // Trigger rules (for automated campaigns)
+  triggerRules   String?   @db.Text // JSON: conditions for auto-sending
+
+  // Schedule
+  startDate      DateTime?
+  endDate        DateTime?
+
+  organizationId String
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id])
+  sends        Send[]
+  stats        CampaignStats?
+}
+
+model CampaignStats {
+  id            String   @id @default(uuid())
+  campaignId    String   @unique
+  totalSends    Int      @default(0)
+  pending       Int      @default(0)
+  processing    Int      @default(0)
+  shipped       Int      @default(0)
+  delivered     Int      @default(0)
+  failed        Int      @default(0)
+  totalSpent    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+// Budget Management
+model Budget {
+  id             String   @id @default(uuid())
+  name           String
+  type           String   @default("MONTHLY") // MONTHLY | QUARTERLY | ANNUAL | CUSTOM
+  amount         Float
+  spent          Float    @default(0)
+  currency       String   @default("USD")
+
+  // Period
+  startDate      DateTime
+  endDate        DateTime
+
+  // Alerts
+  alertThreshold Float?   // Percentage (e.g., 80 = alert at 80% spent)
+  alertSent      Boolean  @default(false)
+
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// Activity Tracking
+model Activity {
+  id             String    @id @default(uuid())
+  type           String    // SEND_CREATED | SEND_SHIPPED | SEND_DELIVERED | RECIPIENT_ADDED | etc.
+  subject        String?
+  description    String?   @db.Text
+  metadata       String?   @db.Text
+  organizationId String
+  userId         String
+  recipientId    String?
+  sendId         String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+  recipient    Recipient?   @relation(fields: [recipientId], references: [id])
+  send         Send?        @relation(fields: [sendId], references: [id])
+}

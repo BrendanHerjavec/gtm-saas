@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+:root {
+  --background: 40 50% 98%;
+  --foreground: 20 14% 10%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 20 14% 10%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14% 10%;
+
+  --primary: 30 100% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 35 100% 96%;
+  --secondary-foreground: 30 80% 30%;
+
+  --muted: 35 30% 94%;
+  --muted-foreground: 20 10% 45%;
+
+  --accent: 35 100% 96%;
+  --accent-foreground: 30 80% 30%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 35 20% 88%;
+  --input: 35 20% 88%;
+  --ring: 30 100% 50%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 20 14% 8%;
+  --foreground: 35 30% 95%;
+
+  --card: 20 14% 10%;
+  --card-foreground: 35 30% 95%;
+
+  --popover: 20 14% 10%;
+  --popover-foreground: 35 30% 95%;
+
+  --primary: 30 100% 55%;
+  --primary-foreground: 20 14% 8%;
+
+  --secondary: 30 20% 18%;
+  --secondary-foreground: 35 30% 90%;
+
+  --muted: 30 15% 18%;
+  --muted-foreground: 35 20% 65%;
+
+  --accent: 30 20% 18%;
+  --accent-foreground: 35 30% 90%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 30 15% 20%;
+  --input: 30 15% 20%;
+  --ring: 30 100% 55%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Floating animation for home page icons */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-25px) rotate(3deg);
+  }
+}
+
+.animate-float {
+  animation: float 20s ease-in-out infinite;
+}
