@@ -21,7 +21,10 @@
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(openssl rand:*)",
+      "Bash(npx vercel logs:*)",
+      "Bash(npx next build)"
     ]
   }
 }

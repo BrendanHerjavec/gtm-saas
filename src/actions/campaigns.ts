@@ -75,7 +75,6 @@ export async function getCampaign(id: string) {
         select: { id: true, name: true, email: true, image: true },
       },
       stats: true,
-      template: true,
     },
   });
 
@@ -172,52 +171,58 @@ export async function getCampaignStats() {
     };
   }
 
-  const [total, byStatus, aggregateStats] = await Promise.all([
-    prisma.campaign.count({
-      where: { organizationId: session.user.organizationId },
-    }),
-    prisma.campaign.groupBy({
-      by: ["status"],
-      where: { organizationId: session.user.organizationId },
-      _count: { status: true },
-    }),
-    prisma.campaignStats.aggregate({
-      where: {
-        campaign: { organizationId: session.user.organizationId },
-      },
-      _sum: {
-        sent: true,
-        delivered: true,
-        opened: true,
-        clicked: true,
-        replied: true,
-        bounced: true,
-      },
-    }),
-  ]);
+  try {
+    const [total, byStatus, aggregateStats] = await Promise.all([
+      prisma.campaign.count({
+        where: { organizationId: session.user.organizationId },
+      }),
+      prisma.campaign.groupBy({
+        by: ["status"],
+        where: { organizationId: session.user.organizationId },
+        _count: { status: true },
+      }),
+      prisma.campaignStats.aggregate({
+        where: {
+          campaign: { organizationId: session.user.organizationId },
+        },
+        _sum: {
+          totalSends: true,
+          delivered: true,
+          shipped: true,
+          pending: true,
+          failed: true,
+        },
+      }),
+    ]);
 
-  const sent = aggregateStats._sum.sent || 0;
-  const delivered = aggregateStats._sum.delivered || 0;
-  const opened = aggregateStats._sum.opened || 0;
-  const clicked = aggregateStats._sum.clicked || 0;
+    const sent = aggregateStats._sum.totalSends || 0;
+    const delivered = aggregateStats._sum.delivered || 0;
+    const shipped = aggregateStats._sum.shipped || 0;
 
-  return {
-    total,
-    byStatus: byStatus.reduce(
-      (acc: Record<string, number>, item: { status: string; _count: { status: number } }) => {
-        acc[item.status] = item._count.status;
-        return acc;
+    return {
+      total,
+      byStatus: byStatus.reduce(
+        (acc: Record<string, number>, item: { status: string; _count: { status: number } }) => {
+          acc[item.status] = item._count.status;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+      metrics: {
+        sent,
+        delivered,
+        opened: shipped, // Use shipped as a proxy for "opened/received"
+        clicked: 0, // Not tracked in this schema
+        deliveryRate: sent > 0 ? (delivered / sent) * 100 : 0,
+        openRate: sent > 0 ? (shipped / sent) * 100 : 0,
+        clickRate: 0,
       },
-      {} as Record<string, number>
-    ),
-    metrics: {
-      sent,
-      delivered,
-      opened,
-      clicked,
-      deliveryRate: sent > 0 ? (delivered / sent) * 100 : 0,
-      openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
-      clickRate: opened > 0 ? (clicked / opened) * 100 : 0,
-    },
-  };
+    };
+  } catch {
+    return {
+      total: 0,
+      byStatus: {} as Record<string, number>,
+      metrics: { sent: 0, delivered: 0, opened: 0, clicked: 0, deliveryRate: 0, openRate: 0, clickRate: 0 },
+    };
+  }
 }
