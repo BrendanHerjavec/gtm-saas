@@ -7,7 +7,8 @@ import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Target, Loader2 } from "lucide-react";
+import { Target, Loader2, Play } from "lucide-react";
+import { enterDemoMode } from "@/actions/demo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
   const {
     register,
@@ -84,6 +86,20 @@ export default function LoginPage() {
         description: "Failed to sign in with Google",
       });
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleDemoMode = async () => {
+    setIsDemoLoading(true);
+    try {
+      await enterDemoMode();
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to enter demo mode",
+      });
+      setIsDemoLoading(false);
     }
   };
 
@@ -182,6 +198,29 @@ export default function LoginPage() {
             Sign in
           </Button>
         </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <Separator />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or</span>
+          </div>
+        </div>
+
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={handleDemoMode}
+          disabled={isDemoLoading}
+        >
+          {isDemoLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="mr-2 h-4 w-4" />
+          )}
+          Try Demo Mode
+        </Button>
       </CardContent>
       <CardFooter>
         <p className="text-sm text-center text-muted-foreground w-full">

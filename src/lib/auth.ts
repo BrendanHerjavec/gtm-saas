@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode, DEMO_SESSION } from "@/lib/demo-mode";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -90,25 +91,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
-// Mock session for development - allows skipping auth
-// Set to true to bypass authentication during development
-const DEMO_MODE = true;
-const mockSession = {
-  user: {
-    id: "demo-user-id",
-    name: "Demo User",
-    email: "demo@example.com",
-    image: null,
-    role: "ADMIN",
-    organizationId: "demo-org-id",
-  },
-  expires: "2099-12-31T23:59:59.999Z",
-};
-
-// Wrapped auth that returns mock session in demo mode
+// Wrapped auth that returns demo session if demo mode cookie is set
 export async function getAuthSession() {
-  if (DEMO_MODE) {
-    return mockSession;
+  if (await isDemoMode()) {
+    return DEMO_SESSION;
   }
   return auth();
 }

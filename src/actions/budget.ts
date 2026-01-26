@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
+import { demoBudgets, demoSends } from "@/lib/demo-data";
 
 export interface GetBudgetsParams {
   type?: string;
@@ -10,6 +12,22 @@ export interface GetBudgetsParams {
 }
 
 export async function getBudgets(params: GetBudgetsParams = {}) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { type, active } = params;
+    const now = new Date();
+    let filtered = [...demoBudgets];
+
+    if (type) {
+      filtered = filtered.filter(b => b.type === type);
+    }
+    if (active) {
+      filtered = filtered.filter(b => b.startDate <= now && b.endDate >= now);
+    }
+
+    return filtered;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return [];
@@ -52,6 +70,12 @@ export async function getBudget(id: string) {
 }
 
 export async function getActiveBudget() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const now = new Date();
+    return demoBudgets.find(b => b.startDate <= now && b.endDate >= now) || null;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;
@@ -131,6 +155,26 @@ export async function deleteBudget(id: string) {
 }
 
 export async function getBudgetSummary() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const activeBudget = demoBudgets.find(b => b.startDate <= now && b.endDate >= now);
+    const monthlySpend = demoSends
+      .filter(s => s.createdAt >= startOfMonth)
+      .reduce((sum, s) => sum + s.totalCost, 0);
+    const totalSpend = demoSends.reduce((sum, s) => sum + s.totalCost, 0);
+
+    return {
+      activeBudget,
+      monthlySpend,
+      totalSpend,
+      remaining: activeBudget ? activeBudget.amount - activeBudget.spent : null,
+      percentUsed: activeBudget ? (activeBudget.spent / activeBudget.amount) * 100 : null,
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;

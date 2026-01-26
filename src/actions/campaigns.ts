@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo-mode";
+import { demoCampaigns, demoSends, DEMO_USER_ID } from "@/lib/demo-data";
 
 export type CampaignStatus = "DRAFT" | "SCHEDULED" | "RUNNING" | "PAUSED" | "COMPLETED";
 export type CampaignType = "EMAIL" | "SEQUENCE" | "SMS";
@@ -14,6 +16,55 @@ export async function getCampaigns(params?: {
   page?: number;
   limit?: number;
 }) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+
+    let filtered = demoCampaigns.map(campaign => {
+      const campaignSends = demoSends.filter(s => s.campaignId === campaign.id);
+      return {
+        ...campaign,
+        createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com", image: null },
+        stats: {
+          id: `stats-${campaign.id}`,
+          campaignId: campaign.id,
+          totalSends: campaignSends.length,
+          pending: campaignSends.filter(s => s.status === "PENDING" || s.status === "PROCESSING").length,
+          processing: 0,
+          shipped: campaignSends.filter(s => s.status === "SHIPPED").length,
+          delivered: campaignSends.filter(s => s.status === "DELIVERED").length,
+          failed: campaignSends.filter(s => s.status === "FAILED").length,
+          totalSpent: campaignSends.reduce((sum, s) => sum + s.totalCost, 0),
+          createdAt: campaign.createdAt,
+          updatedAt: campaign.updatedAt,
+        },
+      };
+    });
+
+    if (params?.status) {
+      filtered = filtered.filter(c => c.status === params.status);
+    }
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase();
+      filtered = filtered.filter(c => c.name.toLowerCase().includes(searchLower));
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const paged = filtered.slice(start, start + limit);
+
+    return {
+      campaigns: paged,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return { campaigns: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
@@ -162,6 +213,33 @@ export async function deleteCampaign(id: string) {
 }
 
 export async function getCampaignStats() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const total = demoCampaigns.length;
+    const byStatus: Record<string, number> = {};
+    demoCampaigns.forEach(c => {
+      byStatus[c.status] = (byStatus[c.status] || 0) + 1;
+    });
+
+    const sent = demoSends.length;
+    const delivered = demoSends.filter(s => s.status === "DELIVERED").length;
+    const shipped = demoSends.filter(s => s.status === "SHIPPED").length;
+
+    return {
+      total,
+      byStatus,
+      metrics: {
+        sent,
+        delivered,
+        opened: shipped + delivered,
+        clicked: 0,
+        deliveryRate: sent > 0 ? (delivered / sent) * 100 : 0,
+        openRate: sent > 0 ? ((shipped + delivered) / sent) * 100 : 0,
+        clickRate: 0,
+      },
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return {

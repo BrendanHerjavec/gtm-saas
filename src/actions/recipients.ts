@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
+import { demoRecipients, DEMO_ORG_ID } from "@/lib/demo-data";
 
 export type RecipientStatus = "all" | "active" | "do_not_send";
 
@@ -14,6 +16,39 @@ export interface GetRecipientsParams {
 }
 
 export async function getRecipients(params: GetRecipientsParams = {}) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { status = "all", search, page = 1, limit = 20 } = params;
+    let filtered = [...demoRecipients];
+
+    if (status === "active") {
+      filtered = filtered.filter(r => !r.doNotSend);
+    } else if (status === "do_not_send") {
+      filtered = filtered.filter(r => r.doNotSend);
+    }
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.email.toLowerCase().includes(searchLower) ||
+        r.firstName?.toLowerCase().includes(searchLower) ||
+        r.lastName?.toLowerCase().includes(searchLower) ||
+        r.company?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const paged = filtered.slice(start, start + limit);
+
+    return {
+      recipients: paged,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return { recipients: [], total: 0, page: 1, totalPages: 0 };
@@ -60,6 +95,15 @@ export async function getRecipients(params: GetRecipientsParams = {}) {
 }
 
 export async function getRecipient(id: string) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const recipient = demoRecipients.find(r => r.id === id);
+    if (recipient) {
+      return { ...recipient, sends: [] };
+    }
+    return null;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;

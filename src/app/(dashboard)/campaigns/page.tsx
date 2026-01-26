@@ -1,39 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
-import Link from "next/link";
-import {
-  Loader2,
-  Mail,
-  MoreHorizontal,
-  Send,
-  Clock,
-  CheckCircle,
-  PauseCircle,
-  Gift,
-} from "lucide-react";
+import { Loader2, Mail, Send, CheckCircle, Gift } from "lucide-react";
 import { getCampaigns, getCampaignStats } from "@/actions/campaigns";
-import { Button } from "@/components/ui/button";
 import { CreateCampaignDialog } from "@/components/features/campaigns/create-campaign-dialog";
+import { CampaignsTable } from "@/components/features/campaigns/campaigns-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { formatDate } from "@/lib/utils";
-
-type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "PAUSED" | "CANCELLED";
 
 export default async function CampaignsPage() {
   return (
@@ -145,24 +117,6 @@ async function CampaignStatsCards() {
 async function CampaignsTableWrapper() {
   const data = await getCampaigns();
 
-  const statusIcons: Record<CampaignStatus, React.ReactNode> = {
-    DRAFT: <Clock className="h-4 w-4" />,
-    SCHEDULED: <Clock className="h-4 w-4" />,
-    SENDING: <Send className="h-4 w-4" />,
-    SENT: <CheckCircle className="h-4 w-4" />,
-    PAUSED: <PauseCircle className="h-4 w-4" />,
-    CANCELLED: <PauseCircle className="h-4 w-4" />,
-  };
-
-  const statusColors: Record<CampaignStatus, "default" | "secondary" | "success" | "warning" | "destructive"> = {
-    DRAFT: "secondary",
-    SCHEDULED: "default",
-    SENDING: "warning",
-    SENT: "success",
-    PAUSED: "secondary",
-    CANCELLED: "destructive",
-  };
-
   if (data.campaigns.length === 0) {
     return (
       <div className="flex h-96 flex-col items-center justify-center text-center">
@@ -175,81 +129,22 @@ async function CampaignsTableWrapper() {
     );
   }
 
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Campaign</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Sent</TableHead>
-          <TableHead>Opened</TableHead>
-          <TableHead>Clicked</TableHead>
-          <TableHead>Created</TableHead>
-          <TableHead className="w-12"></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.campaigns.map((campaign: { id: string; name: string; subject: string | null; status: CampaignStatus; type: string; stats: { sent: number; opened: number; clicked: number } | null; createdAt: Date }) => (
-          <TableRow key={campaign.id}>
-            <TableCell>
-              <Link
-                href={`/campaigns/${campaign.id}`}
-                className="font-medium hover:underline"
-              >
-                {campaign.name}
-              </Link>
-              {campaign.subject && (
-                <p className="text-sm text-muted-foreground truncate max-w-xs">
-                  {campaign.subject}
-                </p>
-              )}
-            </TableCell>
-            <TableCell>
-              <Badge
-                variant={statusColors[campaign.status]}
-                className="gap-1"
-              >
-                {statusIcons[campaign.status]}
-                {campaign.status}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm">{campaign.type}</span>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm">{campaign.stats?.sent || 0}</span>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm">{campaign.stats?.opened || 0}</span>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm">{campaign.stats?.clicked || 0}</span>
-            </TableCell>
-            <TableCell className="text-sm text-muted-foreground">
-              {formatDate(campaign.createdAt)}
-            </TableCell>
-            <TableCell>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/campaigns/${campaign.id}`}>View Details</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive">
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+  // Transform the data to match the expected type
+  const campaigns = data.campaigns.map((campaign: any) => ({
+    id: campaign.id,
+    name: campaign.name,
+    subject: campaign.subject,
+    status: campaign.status,
+    type: campaign.type || "SEQUENCE",
+    stats: campaign.stats
+      ? {
+          sent: campaign.stats.totalSends || 0,
+          opened: campaign.stats.shipped || 0,
+          clicked: 0,
+        }
+      : null,
+    createdAt: campaign.createdAt,
+  }));
+
+  return <CampaignsTable campaigns={campaigns} />;
 }

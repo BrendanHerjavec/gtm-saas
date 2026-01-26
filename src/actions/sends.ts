@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
+import { demoSends, demoRecipients, demoGiftItems, demoCampaigns, DEMO_USER_ID } from "@/lib/demo-data";
 
 export type SendStatus = "all" | "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "FAILED" | "CANCELLED";
 export type SendType = "all" | "GIFT" | "HANDWRITTEN_NOTE" | "VIDEO" | "EXPERIENCE" | "DIRECT_MAIL";
@@ -18,6 +20,42 @@ export interface GetSendsParams {
 }
 
 export async function getSends(params: GetSendsParams = {}) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { status = "all", type = "all", recipientId, campaignId, page = 1, limit = 20 } = params;
+    let filtered = demoSends.map(send => ({
+      ...send,
+      recipient: demoRecipients.find(r => r.id === send.recipientId),
+      giftItem: send.giftItemId ? demoGiftItems.find(g => g.id === send.giftItemId) : null,
+      campaign: send.campaignId ? demoCampaigns.find(c => c.id === send.campaignId) : null,
+      user: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
+    }));
+
+    if (status !== "all") {
+      filtered = filtered.filter(s => s.status === status);
+    }
+    if (type !== "all") {
+      filtered = filtered.filter(s => s.type === type);
+    }
+    if (recipientId) {
+      filtered = filtered.filter(s => s.recipientId === recipientId);
+    }
+    if (campaignId) {
+      filtered = filtered.filter(s => s.campaignId === campaignId);
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const paged = filtered.slice(start, start + limit);
+
+    return {
+      sends: paged,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return { sends: [], total: 0, page: 1, totalPages: 0 };
@@ -187,6 +225,26 @@ export async function cancelSend(id: string) {
 }
 
 export async function getSendStats() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const total = demoSends.length;
+    const pending = demoSends.filter(s => s.status === "PENDING").length;
+    const processing = demoSends.filter(s => s.status === "PROCESSING").length;
+    const shipped = demoSends.filter(s => s.status === "SHIPPED").length;
+    const delivered = demoSends.filter(s => s.status === "DELIVERED").length;
+    const failed = demoSends.filter(s => s.status === "FAILED").length;
+    const totalSpent = demoSends.reduce((sum, s) => sum + s.totalCost, 0);
+
+    return {
+      total,
+      pending: pending + processing,
+      shipped,
+      delivered,
+      failed,
+      totalSpent,
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;

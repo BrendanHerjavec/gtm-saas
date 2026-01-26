@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { BudgetTable } from "@/components/features/budget/budget-table";
 import {
   Wallet,
   Plus,
@@ -35,17 +36,6 @@ export default async function BudgetPage() {
     getBudgets(),
     getBudgetSummary(),
   ]);
-
-  const now = new Date();
-  const activeBudgets = budgets.filter(
-    (b) => new Date(b.startDate) <= now && new Date(b.endDate) >= now
-  );
-  const upcomingBudgets = budgets.filter(
-    (b) => new Date(b.startDate) > now
-  );
-  const pastBudgets = budgets.filter(
-    (b) => new Date(b.endDate) < now
-  );
 
   return (
     <div className="space-y-6">
@@ -130,7 +120,14 @@ export default async function BudgetPage() {
                 <CardTitle>Active Budget</CardTitle>
                 <CardDescription>{summary.activeBudget.name}</CardDescription>
               </div>
-              <Badge variant="default">Active</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="default">Active</Badge>
+                <Link href={`/budget/${summary.activeBudget.id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    Edit
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -186,62 +183,7 @@ export default async function BudgetPage() {
               </Link>
             </div>
           ) : (
-            <div className="relative overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium">Name</th>
-                    <th className="text-left py-3 px-4 font-medium">Type</th>
-                    <th className="text-left py-3 px-4 font-medium">Period</th>
-                    <th className="text-left py-3 px-4 font-medium">Amount</th>
-                    <th className="text-left py-3 px-4 font-medium">Spent</th>
-                    <th className="text-left py-3 px-4 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {budgets.map((budget) => {
-                    const isActive =
-                      new Date(budget.startDate) <= now &&
-                      new Date(budget.endDate) >= now;
-                    const isPast = new Date(budget.endDate) < now;
-                    const percentUsed = (budget.spent / budget.amount) * 100;
-
-                    return (
-                      <tr key={budget.id} className="border-b hover:bg-muted/50">
-                        <td className="py-3 px-4 font-medium">{budget.name}</td>
-                        <td className="py-3 px-4">
-                          <Badge variant="outline">{budget.type}</Badge>
-                        </td>
-                        <td className="py-3 px-4 text-muted-foreground">
-                          {formatDate(budget.startDate)} -{" "}
-                          {formatDate(budget.endDate)}
-                        </td>
-                        <td className="py-3 px-4">
-                          {formatCurrency(budget.amount)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span>{formatCurrency(budget.spent)}</span>
-                            <span className="text-muted-foreground text-xs">
-                              ({Math.round(percentUsed)}%)
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          {isActive ? (
-                            <Badge variant="default">Active</Badge>
-                          ) : isPast ? (
-                            <Badge variant="secondary">Completed</Badge>
-                          ) : (
-                            <Badge variant="outline">Upcoming</Badge>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <BudgetTable budgets={budgets} />
           )}
         </CardContent>
       </Card>

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
+import { demoGiftItems, demoGiftCategories } from "@/lib/demo-data";
 
 export type GiftItemType = "all" | "PHYSICAL" | "DIGITAL" | "EXPERIENCE";
 
@@ -17,6 +19,45 @@ export interface GetCatalogParams {
 }
 
 export async function getCatalog(params: GetCatalogParams = {}) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { type = "all", categoryId, search, inStock, page = 1, limit = 20 } = params;
+    let filtered = demoGiftItems.map(item => ({
+      ...item,
+      category: item.categoryId ? demoGiftCategories.find(c => c.id === item.categoryId) : null,
+      vendor: null,
+    }));
+
+    if (type !== "all") {
+      filtered = filtered.filter(i => i.type === type);
+    }
+    if (categoryId) {
+      filtered = filtered.filter(i => i.categoryId === categoryId);
+    }
+    if (inStock !== undefined) {
+      filtered = filtered.filter(i => i.inStock === inStock);
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(i =>
+        i.name.toLowerCase().includes(searchLower) ||
+        i.description?.toLowerCase().includes(searchLower) ||
+        i.tags?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const paged = filtered.slice(start, start + limit);
+
+    return {
+      items: paged,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return { items: [], total: 0, page: 1, totalPages: 0 };
@@ -162,6 +203,11 @@ export async function deleteGiftItem(id: string) {
 
 // Categories
 export async function getCategories() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    return demoGiftCategories;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return [];
