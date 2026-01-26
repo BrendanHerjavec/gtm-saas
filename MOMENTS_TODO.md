@@ -47,8 +47,8 @@ Transform the existing GTM SaaS CRM into a hybrid app combining relationship man
 - [x] Create `src/components/features/marketplace/gesture-card.tsx`
 - [x] Create `src/components/features/marketplace/gesture-grid.tsx`
 - [x] Create `src/components/features/marketplace/category-filter.tsx`
-- [ ] (Optional) Add Gesture model to `prisma/schema.prisma`
-- [ ] (Optional) Create `src/actions/gestures.ts`
+- [x] (Optional) Add Gesture model to `prisma/schema.prisma`
+- [x] (Optional) Create `src/actions/gestures.ts`
 
 **Gesture Categories:**
 | Category | Examples | Price Range |
@@ -107,12 +107,12 @@ Transform the existing GTM SaaS CRM into a hybrid app combining relationship man
 
 ---
 
-## Phase 7: Campaign System Enhancement (Future)
-- [ ] Add `CampaignStep` model to schema for multi-step flows
-- [ ] Add `GestureType` enum (TREE_PLANTING, LOCAL_COFFEE, HANDWRITTEN_NOTE, etc.)
-- [ ] Create visual campaign builder component
-- [ ] Support gesture steps alongside email steps
-- [ ] Track gesture-specific metrics (delivered, confirmed, etc.)
+## Phase 7: Campaign System Enhancement
+- [x] Add `CampaignStep` model to schema for multi-step flows
+- [x] Create visual campaign builder component
+- [x] Support gesture steps alongside email steps
+- [x] Add delay steps between campaign actions
+- [ ] Track gesture-specific metrics (delivered, confirmed, etc.) - Future enhancement
 
 ---
 

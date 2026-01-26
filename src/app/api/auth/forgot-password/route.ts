@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail, getPasswordResetEmailHtml } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -22,8 +23,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Reset email sent if account exists" });
     }
 
-    // TODO: Implement actual password reset email sending
-    // For now, we'll create a verification token
     const token = crypto.randomUUID();
     const expires = new Date(Date.now() + 3600000); // 1 hour from now
 
@@ -35,9 +34,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // TODO: Send email with reset link containing token
-    // In production, integrate with an email service like Resend, SendGrid, etc.
-    console.log(`Password reset token for ${email}: ${token}`);
+    // Build reset URL and send email
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+    await sendEmail({
+      to: email,
+      subject: "Reset Your Password",
+      html: getPasswordResetEmailHtml(resetUrl),
+    });
 
     return NextResponse.json({ message: "Reset email sent if account exists" });
   } catch (error) {

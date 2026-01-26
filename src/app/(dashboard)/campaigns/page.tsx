@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import Link from "next/link";
 import {
-  Plus,
   Loader2,
   Mail,
   MoreHorizontal,
@@ -11,9 +10,11 @@ import {
   Clock,
   CheckCircle,
   PauseCircle,
+  Gift,
 } from "lucide-react";
 import { getCampaigns, getCampaignStats } from "@/actions/campaigns";
 import { Button } from "@/components/ui/button";
+import { CreateCampaignDialog } from "@/components/features/campaigns/create-campaign-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -41,13 +42,10 @@ export default async function CampaignsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
           <p className="text-muted-foreground">
-            Create and manage email campaigns
+            Create and manage multi-step outreach campaigns
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Campaign
-        </Button>
+        <CreateCampaignDialog />
       </div>
 
       <Suspense
@@ -96,14 +94,14 @@ async function CampaignStatsCards() {
         <CardContent>
           <div className="text-2xl font-bold">{stats.total}</div>
           <p className="text-xs text-muted-foreground">
-            {stats.byStatus?.SENT || 0} sent
+            {stats.byStatus?.ACTIVE || 0} active
           </p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Emails Sent</CardTitle>
-          <Send className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">Gestures Sent</CardTitle>
+          <Gift className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.metrics.sent}</div>
@@ -114,27 +112,29 @@ async function CampaignStatsCards() {
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
+          <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
+          <Send className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.metrics.openRate.toFixed(1)}%
           </div>
           <p className="text-xs text-muted-foreground">
-            {stats.metrics.opened} opened
+            {stats.metrics.opened} received
           </p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
+          <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
+          <CheckCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.metrics.clickRate.toFixed(1)}%
           </div>
           <p className="text-xs text-muted-foreground">
-            {stats.metrics.clicked} clicked
+            {stats.metrics.clicked} responses
           </p>
         </CardContent>
       </Card>

@@ -1,6 +1,12 @@
 import { Gift } from "lucide-react";
+import { SeedGesturesButton } from "./seed-gestures-button";
 
-export function MarketplaceHeader() {
+interface MarketplaceHeaderProps {
+  showSeedButton?: boolean;
+  gestureCount?: number;
+}
+
+export function MarketplaceHeader({ showSeedButton, gestureCount = 0 }: MarketplaceHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -15,6 +21,7 @@ export function MarketplaceHeader() {
           handled by our fulfillment partners.
         </p>
       </div>
+      {showSeedButton && gestureCount === 0 && <SeedGesturesButton />}
     </div>
   );
 }

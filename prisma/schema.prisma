@@ -132,6 +132,29 @@ model User {
 // HIGH-TOUCH MARKETPLACE MODELS
 // =====================
 
+// Gestures - Marketplace items available for campaigns (global catalog)
+model Gesture {
+  id          String  @id @default(uuid())
+  name        String
+  description String? @db.Text
+  category    String  // sustainability | food | gifting | wellness | experiences | personal
+  icon        String  // Lucide icon name (e.g., "TreePine", "Coffee")
+  minPrice    Float
+  maxPrice    Float
+  currency    String  @default("USD")
+  popular     Boolean @default(false)
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaignSteps CampaignStep[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
 // Recipients - People who receive gifts/touches (synced from CRM)
 model Recipient {
   id             String   @id @default(uuid())
@@ -165,6 +188,7 @@ model Recipient {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   sends        Send[]
   activities   Activity[]
+  campaigns    CampaignRecipient[]
 
   @@index([organizationId, externalId, externalSource])
   @@index([organizationId, email])
@@ -326,6 +350,57 @@ model Campaign {
   createdBy    User         @relation(fields: [createdById], references: [id])
   sends        Send[]
   stats        CampaignStats?
+  steps        CampaignStep[]
+  recipients   CampaignRecipient[]
+}
+
+// Campaign Recipients - Many-to-many relation
+model CampaignRecipient {
+  id          String   @id @default(uuid())
+  campaignId  String
+  recipientId String
+  status      String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | FAILED
+  currentStep Int      @default(0) // Which step they're on (0 = not started)
+  addedAt     DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipient Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, recipientId])
+  @@index([campaignId])
+  @@index([recipientId])
+}
+
+// Campaign Steps - Multi-step campaign flows
+model CampaignStep {
+  id          String  @id @default(uuid())
+  campaignId  String
+  stepOrder   Int     // Order in the sequence (1, 2, 3...)
+  stepType    String  // EMAIL | GESTURE | DELAY
+
+  // For EMAIL steps
+  emailSubject  String?
+  emailContent  String? @db.Text
+
+  // For GESTURE steps
+  gestureId     String?
+  gestureNote   String? @db.Text // Personalized message to include
+
+  // For DELAY steps
+  delayDays     Int?
+  delayHours    Int?
+
+  // Step-level settings
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campaign Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  gesture  Gesture?  @relation(fields: [gestureId], references: [id])
+
+  @@index([campaignId, stepOrder])
 }
 
 model CampaignStats {
