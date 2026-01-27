@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,8 @@ interface TaskDeckProps {
   initialPage: number;
 }
 
+type SlideDirection = "left" | "right" | "none";
+
 export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -35,6 +37,8 @@ export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckPr
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [slideDirection, setSlideDirection] = useState<SlideDirection>("none");
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const currentTask = tasks[currentIndex];
   const hasPrevious = currentIndex > 0;
@@ -42,17 +46,49 @@ export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckPr
   const position = currentIndex + 1;
   const total = tasks.length;
 
-  const handlePrevious = () => {
-    if (hasPrevious) {
-      setCurrentIndex((prev) => prev - 1);
-    }
-  };
+  const animateAndNavigate = useCallback((direction: SlideDirection, newIndex: number) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setSlideDirection(direction);
 
-  const handleNext = () => {
-    if (hasNext) {
-      setCurrentIndex((prev) => prev + 1);
+    // After animation starts, change the index
+    setTimeout(() => {
+      setCurrentIndex(newIndex);
+      setSlideDirection("none");
+      setIsAnimating(false);
+    }, 200);
+  }, [isAnimating]);
+
+  const handlePrevious = useCallback(() => {
+    if (hasPrevious && !isAnimating) {
+      animateAndNavigate("right", currentIndex - 1);
     }
-  };
+  }, [hasPrevious, isAnimating, currentIndex, animateAndNavigate]);
+
+  const handleNext = useCallback(() => {
+    if (hasNext && !isAnimating) {
+      animateAndNavigate("left", currentIndex + 1);
+    }
+  }, [hasNext, isAnimating, currentIndex, animateAndNavigate]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        handlePrevious();
+      } else if (e.key === "ArrowRight") {
+        handleNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handlePrevious, handleNext]);
 
   const handleStartTask = async (taskId: string) => {
     startTransition(async () => {
@@ -162,7 +198,7 @@ export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckPr
           variant="outline"
           size="sm"
           onClick={handlePrevious}
-          disabled={!hasPrevious || isPending}
+          disabled={!hasPrevious || isPending || isAnimating}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Previous
@@ -173,28 +209,38 @@ export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckPr
           <Badge variant="secondary" className="text-sm font-medium">
             {position} of {total}
           </Badge>
-          {isPending && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          {(isPending || isAnimating) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
         </div>
 
         <Button
           variant="outline"
           size="sm"
           onClick={handleNext}
-          disabled={!hasNext || isPending}
+          disabled={!hasNext || isPending || isAnimating}
         >
           Next
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
 
-      {/* Task Card */}
-      <TaskCard
-        task={currentTask}
-        onComplete={handleCompleteClick}
-        onSkip={handleSkipClick}
-        onStart={handleStartTask}
-        isLoading={isPending}
-      />
+      {/* Task Card with Animation */}
+      <div
+        className={`transition-all duration-200 ease-out ${
+          slideDirection === "left"
+            ? "-translate-x-4 opacity-0"
+            : slideDirection === "right"
+            ? "translate-x-4 opacity-0"
+            : "translate-x-0 opacity-100"
+        }`}
+      >
+        <TaskCard
+          task={currentTask}
+          onComplete={handleCompleteClick}
+          onSkip={handleSkipClick}
+          onStart={handleStartTask}
+          isLoading={isPending || isAnimating}
+        />
+      </div>
 
       {/* Progress Dots */}
       {total > 1 && total <= 10 && (
@@ -202,13 +248,17 @@ export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckPr
           {tasks.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
+              onClick={() => {
+                if (index !== currentIndex && !isAnimating) {
+                  animateAndNavigate(index > currentIndex ? "left" : "right", index);
+                }
+              }}
+              className={`w-2 h-2 rounded-full transition-all duration-200 ${
                 index === currentIndex
-                  ? "bg-primary"
+                  ? "bg-primary scale-125"
                   : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
               }`}
-              disabled={isPending}
+              disabled={isPending || isAnimating}
             />
           ))}
         </div>

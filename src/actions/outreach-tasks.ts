@@ -600,3 +600,119 @@ export async function createBatchOutreachTasks(
   revalidatePath("/outreach");
   return { count: tasks.count };
 }
+
+/**
+ * Generate tasks from a campaign
+ * Creates tasks for each recipient in the campaign based on campaign steps
+ */
+export async function generateTasksFromCampaign(
+  campaignId: string,
+  taskType: "VIDEO" | "HANDWRITTEN_NOTE" | "GIFT" | "EXPERIENCE" | "DIRECT_MAIL" = "VIDEO"
+): Promise<{ success: boolean; count: number; error?: string }> {
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId || !session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    // Get the campaign with recipients
+    const campaign = await prisma.campaign.findFirst({
+      where: {
+        id: campaignId,
+        organizationId: session.user.organizationId,
+      },
+      include: {
+        recipients: {
+          include: {
+            recipient: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      return { success: false, count: 0, error: "Campaign not found" };
+    }
+
+    if (campaign.recipients.length === 0) {
+      return { success: false, count: 0, error: "Campaign has no recipients" };
+    }
+
+    // Get existing tasks for this campaign to avoid duplicates
+    const existingTasks = await prisma.outreachTask.findMany({
+      where: {
+        campaignId,
+        organizationId: session.user.organizationId,
+        status: { in: ["PENDING", "IN_PROGRESS"] },
+      },
+      select: { recipientId: true },
+    });
+
+    const existingRecipientIds = new Set(existingTasks.map((t) => t.recipientId));
+
+    // Filter out recipients who already have pending tasks
+    const recipientsToAdd = campaign.recipients.filter(
+      (cr) => !existingRecipientIds.has(cr.recipientId)
+    );
+
+    if (recipientsToAdd.length === 0) {
+      return {
+        success: false,
+        count: 0,
+        error: "All recipients already have pending tasks for this campaign",
+      };
+    }
+
+    // Get the next sortOrder
+    const lastTask = await prisma.outreachTask.findFirst({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+
+    let sortOrder = (lastTask?.sortOrder ?? -1) + 1;
+
+    // Create task title based on type
+    const taskTitles: Record<string, string> = {
+      VIDEO: `Record personalized video for ${campaign.name}`,
+      HANDWRITTEN_NOTE: `Write handwritten note for ${campaign.name}`,
+      GIFT: `Send gift for ${campaign.name}`,
+      EXPERIENCE: `Book experience for ${campaign.name}`,
+      DIRECT_MAIL: `Send direct mail for ${campaign.name}`,
+    };
+
+    // Create tasks for all recipients
+    const tasks = await prisma.outreachTask.createMany({
+      data: recipientsToAdd.map((cr) => ({
+        recipientId: cr.recipientId,
+        taskType,
+        title: taskTitles[taskType],
+        description: campaign.description || null,
+        context: JSON.stringify({
+          campaignName: campaign.name,
+          recipientName: `${cr.recipient.firstName || ""} ${cr.recipient.lastName || ""}`.trim(),
+          company: cr.recipient.company,
+          notes: cr.recipient.notes,
+        }),
+        status: "PENDING",
+        priority: 3,
+        campaignId,
+        organizationId: session.user.organizationId!,
+        sortOrder: sortOrder++,
+        assignedToId: session.user.id,
+      })),
+    });
+
+    revalidatePath("/outreach");
+    revalidatePath(`/campaigns/${campaignId}`);
+
+    return { success: true, count: tasks.count };
+  } catch (error) {
+    console.error("Failed to generate tasks from campaign:", error);
+    return {
+      success: false,
+      count: 0,
+      error: error instanceof Error ? error.message : "Failed to generate tasks",
+    };
+  }
+}
