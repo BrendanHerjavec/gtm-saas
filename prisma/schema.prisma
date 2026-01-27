@@ -63,6 +63,7 @@ model Organization {
   activities     Activity[]
   crmIntegration CRMIntegration?
   vendors        Vendor[]
+  outreachTasks  OutreachTask[]
 }
 
 // CRM Integration - One per Organization (for syncing recipients)
@@ -120,12 +121,14 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  organization Organization? @relation(fields: [organizationId], references: [id])
-  sends        Send[]
-  activities   Activity[]
-  campaigns    Campaign[]
+  accounts       Account[]
+  sessions       Session[]
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  sends          Send[]
+  activities     Activity[]
+  campaigns      Campaign[]
+  assignedTasks  OutreachTask[] @relation("AssignedTasks")
+  completedTasks OutreachTask[] @relation("CompletedTasks")
 }
 
 // =====================
@@ -185,10 +188,11 @@ model Recipient {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  sends        Send[]
-  activities   Activity[]
-  campaigns    CampaignRecipient[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sends          Send[]
+  activities     Activity[]
+  campaigns      CampaignRecipient[]
+  outreachTasks  OutreachTask[]
 
   @@index([organizationId, externalId, externalSource])
   @@index([organizationId, email])
@@ -309,13 +313,14 @@ model Send {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  recipient    Recipient     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  giftItem     GiftItem?     @relation(fields: [giftItemId], references: [id])
-  campaign     Campaign?     @relation(fields: [campaignId], references: [id])
-  user         User          @relation(fields: [userId], references: [id])
-  vendor       Vendor?       @relation(fields: [vendorId], references: [id])
-  activities   Activity[]
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recipient     Recipient     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  giftItem      GiftItem?     @relation(fields: [giftItemId], references: [id])
+  campaign      Campaign?     @relation(fields: [campaignId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  vendor        Vendor?       @relation(fields: [vendorId], references: [id])
+  activities    Activity[]
+  outreachTask  OutreachTask?
 
   @@index([organizationId, status])
   @@index([recipientId])
@@ -346,12 +351,13 @@ model Campaign {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User         @relation(fields: [createdById], references: [id])
-  sends        Send[]
-  stats        CampaignStats?
-  steps        CampaignStep[]
-  recipients   CampaignRecipient[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  sends          Send[]
+  stats          CampaignStats?
+  steps          CampaignStep[]
+  recipients     CampaignRecipient[]
+  outreachTasks  OutreachTask[]
 }
 
 // Campaign Recipients - Many-to-many relation
@@ -417,6 +423,60 @@ model CampaignStats {
   updatedAt     DateTime @updatedAt
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+// Outreach Tasks - Card deck for working through outreach actions
+model OutreachTask {
+  id             String    @id @default(uuid())
+
+  // Who this task is for
+  recipientId    String
+
+  // Task details
+  taskType       String    // GIFT | HANDWRITTEN_NOTE | VIDEO | EXPERIENCE | DIRECT_MAIL
+  title          String
+  description    String?   @db.Text
+
+  // Context for the outreach (JSON: CRM data snapshot, talking points, manual notes)
+  context        String?   @db.Text
+
+  // Status tracking
+  status         String    @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
+  priority       Int       @default(0) // Higher = more urgent
+
+  // Optional campaign linkage
+  campaignId     String?
+
+  // Result tracking - links to Send when completed
+  sendId         String?   @unique
+  completedAt    DateTime?
+  completedById  String?
+  skipReason     String?
+
+  // Assignment
+  assignedToId   String?
+
+  // Scheduling
+  dueDate        DateTime?
+
+  // Ordering within the deck
+  sortOrder      Int       @default(0)
+
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recipient      Recipient    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  campaign       Campaign?    @relation(fields: [campaignId], references: [id])
+  send           Send?        @relation(fields: [sendId], references: [id])
+  assignedTo     User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  completedBy    User?        @relation("CompletedTasks", fields: [completedById], references: [id])
+
+  @@index([organizationId, status])
+  @@index([organizationId, assignedToId, status])
+  @@index([recipientId])
+  @@index([campaignId])
 }
 
 // Budget Management

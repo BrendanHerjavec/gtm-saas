@@ -138,6 +138,51 @@ export const createCategorySchema = z.object({
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 
+// Outreach Task schemas
+export const taskTypeEnum = z.enum([
+  "GIFT",
+  "HANDWRITTEN_NOTE",
+  "VIDEO",
+  "EXPERIENCE",
+  "DIRECT_MAIL",
+]);
+
+export const taskStatusEnum = z.enum([
+  "PENDING",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "SKIPPED",
+]);
+
+export const createOutreachTaskSchema = z.object({
+  recipientId: z.string().min(1, "Recipient is required"),
+  taskType: taskTypeEnum,
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(2000).optional(),
+  context: z.string().max(5000).optional(),
+  priority: z.coerce.number().int().min(0).max(10).default(0),
+  dueDate: z.coerce.date().optional(),
+  campaignId: z.string().optional(),
+  assignedToId: z.string().optional(),
+});
+
+export const updateOutreachTaskSchema = createOutreachTaskSchema.partial().extend({
+  status: taskStatusEnum.optional(),
+  skipReason: z.string().max(500).optional(),
+});
+
+export const completeOutreachTaskSchema = z.object({
+  taskId: z.string().min(1, "Task ID is required"),
+  message: z.string().max(2000).optional(),
+  videoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  giftItemId: z.string().optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+export type CreateOutreachTaskInput = z.infer<typeof createOutreachTaskSchema>;
+export type UpdateOutreachTaskInput = z.infer<typeof updateOutreachTaskSchema>;
+export type CompleteOutreachTaskInput = z.infer<typeof completeOutreachTaskSchema>;
+
 // Helper to validate and return typed errors
 export function validateInput<T>(
   schema: z.ZodSchema<T>,

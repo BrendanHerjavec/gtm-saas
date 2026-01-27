@@ -17,6 +17,7 @@ import {
   Sparkles,
   Gift,
   Plug,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,6 +28,11 @@ const navigation = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Outreach",
+    href: "/outreach",
+    icon: Layers,
   },
   {
     name: "Sends",
