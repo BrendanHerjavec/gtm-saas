@@ -30,7 +30,7 @@ import {
   Calendar,
   Mail,
 } from "lucide-react";
-import { generateTasksFromCampaign } from "@/actions/outreach-tasks";
+import { generateTasksFromCampaign } from "@/actions/tasks";
 
 interface GenerateTasksButtonProps {
   campaignId: string;
@@ -93,10 +93,10 @@ export function GenerateTasksButton({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
-            Generate Outreach Tasks
+            Generate Tasks
           </DialogTitle>
           <DialogDescription>
-            Create outreach tasks for all {recipientCount} recipients in &ldquo;{campaignName}&rdquo;.
+            Create tasks for all {recipientCount} recipients in &ldquo;{campaignName}&rdquo;.
           </DialogDescription>
         </DialogHeader>
 
@@ -109,14 +109,14 @@ export function GenerateTasksButton({
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Tasks Created!</h3>
                 <p className="text-muted-foreground mb-4">
-                  Successfully created {result.count} outreach tasks.
+                  Successfully created {result.count} tasks.
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Button variant="outline" onClick={handleClose}>
                     Close
                   </Button>
-                  <Button onClick={() => router.push("/outreach")}>
-                    Go to Outreach Deck
+                  <Button onClick={() => router.push("/tasks")}>
+                    Go to Task Deck
                   </Button>
                 </div>
               </div>
@@ -164,9 +164,9 @@ export function GenerateTasksButton({
               <div className="rounded-lg bg-muted/50 p-4">
                 <h4 className="font-medium text-sm mb-2">What will be created:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• {recipientCount} outreach tasks (one per recipient)</li>
+                  <li>• {recipientCount} tasks (one per recipient)</li>
                   <li>• Each task will include recipient context</li>
-                  <li>• Tasks will be added to your Outreach Deck</li>
+                  <li>• Tasks will be added to your Task Deck</li>
                 </ul>
               </div>
             </div>

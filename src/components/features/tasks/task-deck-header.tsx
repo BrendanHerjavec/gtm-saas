@@ -66,7 +66,7 @@ export function TaskDeckHeader({ stats, currentFilter, onFilterChange }: TaskDec
             </Badge>
           )}
         </div>
-        <Link href="/outreach/new">
+        <Link href="/tasks/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             New Task

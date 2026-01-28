@@ -483,6 +483,67 @@ export const demoActivities = [
   },
 ];
 
+// Demo Task Decks
+export const demoTaskDecks = [
+  {
+    id: "demo-deck-1",
+    name: "Q1 Enterprise Outreach",
+    description: "High-priority enterprise prospects for Q1",
+    coverColor: "#3B82F6",
+    emoji: "🎯",
+    status: "SEALED",
+    openedAt: null,
+    completedAt: null,
+    totalTasks: 3,
+    completedTasks: 0,
+    skippedTasks: 0,
+    sourceType: "campaign",
+    sourceId: "demo-campaign-1",
+    organizationId: DEMO_ORG_ID,
+    createdById: DEMO_USER_ID,
+    createdAt: new Date("2025-01-20"),
+    updatedAt: new Date("2025-01-20"),
+  },
+  {
+    id: "demo-deck-2",
+    name: "Conference Follow-ups",
+    description: "People we met at SaaStr",
+    coverColor: "#10B981",
+    emoji: "🤝",
+    status: "OPENED",
+    openedAt: new Date("2025-01-22"),
+    completedAt: null,
+    totalTasks: 2,
+    completedTasks: 1,
+    skippedTasks: 0,
+    sourceType: "manual",
+    sourceId: null,
+    organizationId: DEMO_ORG_ID,
+    createdById: DEMO_USER_ID,
+    createdAt: new Date("2025-01-18"),
+    updatedAt: new Date("2025-01-25"),
+  },
+  {
+    id: "demo-deck-3",
+    name: "Customer Appreciation",
+    description: "Thank you notes for top customers",
+    coverColor: "#8B5CF6",
+    emoji: "💜",
+    status: "COMPLETED",
+    openedAt: new Date("2025-01-10"),
+    completedAt: new Date("2025-01-15"),
+    totalTasks: 5,
+    completedTasks: 4,
+    skippedTasks: 1,
+    sourceType: "manual",
+    sourceId: null,
+    organizationId: DEMO_ORG_ID,
+    createdById: DEMO_USER_ID,
+    createdAt: new Date("2025-01-05"),
+    updatedAt: new Date("2025-01-15"),
+  },
+];
+
 // Demo Outreach Tasks
 export const demoOutreachTasks = [
   {

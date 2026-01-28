@@ -20,7 +20,7 @@ import {
   SkipForward,
   AlertCircle,
 } from "lucide-react";
-import type { OutreachTaskWithRecipient } from "@/actions/outreach-tasks";
+import type { OutreachTaskWithRecipient } from "@/actions/tasks";
 
 interface TaskCardProps {
   task: OutreachTaskWithRecipient;
