@@ -9,7 +9,7 @@ export function Hero() {
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             Outbound and customer engagement{" "}
-            <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green-800 to-emerald-700 bg-clip-text text-transparent">
               people actually remember
             </span>
           </h1>
@@ -21,7 +21,7 @@ export function Hero() {
             <Link href="/register">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800"
               >
                 Build your first human campaign
                 <ArrowRight className="ml-2 h-4 w-4" />

@@ -82,7 +82,7 @@ export function GestureCard({ gesture }: GestureCardProps) {
               <Icon className="h-6 w-6 text-primary" />
             </div>
             {gesture.popular && (
-              <Badge className="bg-gradient-to-r from-orange-500 to-amber-500">
+              <Badge className="bg-gradient-to-r from-green-800 to-emerald-700">
                 Popular
               </Badge>
             )}

@@ -134,7 +134,7 @@ export function StepCard({ step, onEdit, onDelete, isDragging }: StepCardProps) 
       case "EMAIL":
         return "bg-blue-500/10 text-blue-600";
       case "GESTURE":
-        return "bg-orange-500/10 text-orange-600";
+        return "bg-green-800/10 text-green-800";
       case "DELAY":
         return "bg-gray-500/10 text-gray-600";
       default:

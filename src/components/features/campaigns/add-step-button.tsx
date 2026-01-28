@@ -37,7 +37,7 @@ export function AddStepButton({ onAddStep }: AddStepButtonProps) {
           Email
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleSelect("GESTURE")}>
-          <Gift className="mr-2 h-4 w-4 text-orange-600" />
+          <Gift className="mr-2 h-4 w-4 text-green-800" />
           Gesture
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleSelect("DELAY")}>
