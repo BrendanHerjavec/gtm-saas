@@ -126,7 +126,7 @@ export default function UseCasesPage() {
           <Link href="/register">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+              className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800"
             >
               Get started free
               <ArrowRight className="ml-2 h-4 w-4" />

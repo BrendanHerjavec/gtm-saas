@@ -16,12 +16,18 @@ import {
   Clock,
   Truck,
   Package,
+  Layers,
+  Video,
+  PenLine,
+  Calendar,
+  Mail,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSendStats } from "@/actions/sends";
 import { getBudgetSummary } from "@/actions/budget";
+import { getTaskDeckStats } from "@/actions/outreach-tasks";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -41,7 +47,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Link href="/sends/new">
-          <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+          <Button className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800">
             <Plus className="mr-2 h-4 w-4" />
             New Send
           </Button>
@@ -82,6 +88,22 @@ export default async function DashboardPage() {
         }
       >
         <SendStatusOverview />
+      </Suspense>
+
+      {/* Outreach Tasks Widget */}
+      <Suspense
+        fallback={
+          <Card>
+            <CardHeader>
+              <CardTitle>Loading...</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </CardContent>
+          </Card>
+        }
+      >
+        <OutreachTasksWidget />
       </Suspense>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -299,6 +321,82 @@ async function BudgetOverviewCard() {
                 Create Budget
               </Button>
             </Link>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+async function OutreachTasksWidget() {
+  const stats = await getTaskDeckStats();
+
+  const taskTypes = [
+    { type: "VIDEO", label: "Videos", icon: Video, color: "text-blue-500 bg-blue-500/10" },
+    { type: "HANDWRITTEN_NOTE", label: "Notes", icon: PenLine, color: "text-purple-500 bg-purple-500/10" },
+    { type: "GIFT", label: "Gifts", icon: Gift, color: "text-orange-500 bg-orange-500/10" },
+    { type: "EXPERIENCE", label: "Experiences", icon: Calendar, color: "text-green-500 bg-green-500/10" },
+    { type: "DIRECT_MAIL", label: "Mail", icon: Mail, color: "text-rose-500 bg-rose-500/10" },
+  ];
+
+  const hasNoTasks = !stats || stats.actionable === 0;
+
+  return (
+    <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-primary/10 p-2">
+            <Layers className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle>Outreach Deck</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {hasNoTasks ? "No tasks waiting" : `${stats.actionable} tasks to complete`}
+            </p>
+          </div>
+        </div>
+        <Link href="/outreach">
+          <Button>
+            {hasNoTasks ? "Create Task" : "Start Working"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {hasNoTasks ? (
+          <div className="text-center py-4">
+            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+            <p className="text-muted-foreground">
+              All caught up! Create new tasks or generate them from a campaign.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-3">
+            {taskTypes.map((taskType) => {
+              const count = stats.byType[taskType.type as keyof typeof stats.byType] || 0;
+              const Icon = taskType.icon;
+              return (
+                <div
+                  key={taskType.type}
+                  className={`flex flex-col items-center p-3 rounded-lg ${taskType.color}`}
+                >
+                  <Icon className="h-5 w-5 mb-1" />
+                  <span className="text-xl font-bold">{count}</span>
+                  <span className="text-xs text-center">{taskType.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {stats && stats.inProgress > 0 && (
+          <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-blue-500" />
+              <span className="text-muted-foreground">
+                <span className="font-medium text-foreground">{stats.inProgress}</span> task{stats.inProgress !== 1 ? "s" : ""} in progress
+              </span>
+            </div>
+            <Badge variant="secondary">{stats.completed} completed</Badge>
           </div>
         )}
       </CardContent>

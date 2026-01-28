@@ -8,6 +8,7 @@ import {
   getProviderAdapter,
   isValidProvider,
 } from "@/lib/integrations/providers";
+import { runInitialSync } from "@/lib/integrations/sync";
 
 export async function GET(
   request: NextRequest,
@@ -65,8 +66,11 @@ export async function GET(
     // Store tokens securely
     await storeIntegrationTokens(stateData.organizationId, provider, tokens);
 
-    // TODO: Optionally trigger initial sync here
-    // await queueInitialSync(stateData.organizationId);
+    // Trigger initial sync in background (fire-and-forget)
+    // Don't await - let the user be redirected while sync runs
+    runInitialSync(stateData.organizationId).catch((syncError) => {
+      console.error("Initial sync failed:", syncError);
+    });
 
     // Redirect to integrations page with success
     return NextResponse.redirect(

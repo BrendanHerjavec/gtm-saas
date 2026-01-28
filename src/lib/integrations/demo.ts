@@ -11,7 +11,7 @@ export const DEMO_INTEGRATION_MODE = true;
 
 // Demo provider configuration
 export const DEMO_PROVIDERS: Record<string, { name: string; color: string }> = {
-  hubspot: { name: "HubSpot (Demo)", color: "bg-orange-500" },
+  hubspot: { name: "HubSpot (Demo)", color: "bg-green-800" },
   salesforce: { name: "Salesforce (Demo)", color: "bg-blue-500" },
   attio: { name: "Attio (Demo)", color: "bg-purple-500" },
 };

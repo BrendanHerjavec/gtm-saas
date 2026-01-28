@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Edit2, Play, Pause, Users } from "lucide-react";
+import { ArrowLeft, Edit2, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StepCard } from "@/components/features/campaigns/step-card";
 import { RecipientList } from "@/components/features/campaigns/recipient-list";
+import { GenerateTasksButton } from "@/components/features/campaigns/generate-tasks-button";
 import { getCampaignWithSteps } from "@/actions/campaign-steps";
 import { formatDate } from "@/lib/utils";
 
@@ -48,6 +49,11 @@ export default async function CampaignDetailPage({ params }: CampaignDetailPageP
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <GenerateTasksButton
+              campaignId={campaign.id}
+              campaignName={campaign.name}
+              recipientCount={campaign.recipients.length}
+            />
             {campaign.status === "DRAFT" && (
               <Button variant="outline">
                 <Play className="mr-2 h-4 w-4" />

@@ -50,7 +50,7 @@ export default async function HomePage() {
   const isLoggedIn = !!session?.user;
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-green-50">
       {/* Floating Icons Background */}
       <div className="absolute inset-0 pointer-events-none">
         {floatingIcons.map((item, index) => (
@@ -64,7 +64,7 @@ export default async function HomePage() {
               animationDuration: item.duration,
             }}
           >
-            <item.Icon className="h-12 w-12 text-orange-500" />
+            <item.Icon className="h-12 w-12 text-green-800" />
           </div>
         ))}
       </div>
@@ -74,7 +74,7 @@ export default async function HomePage() {
         <div className="text-center max-w-3xl">
           {/* Logo */}
           <div className="flex items-center justify-center mb-8">
-            <div className="p-4 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg">
+            <div className="p-4 rounded-full bg-gradient-to-br from-green-800 to-emerald-700 shadow-lg">
               <Gift className="h-16 w-16 text-white" />
             </div>
           </div>
@@ -82,7 +82,7 @@ export default async function HomePage() {
           {/* Welcome Message */}
           <h1 className="text-5xl font-bold tracking-tight text-gray-900 mb-4">
             Create{" "}
-            <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green-800 to-emerald-700 bg-clip-text text-transparent">
               Meaningful Moments
             </span>
           </h1>
@@ -94,10 +94,10 @@ export default async function HomePage() {
           {isLoggedIn ? (
             <>
               {/* User Greeting - shown when logged in */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-orange-100 mb-8">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100 mb-8">
                 <p className="text-lg text-gray-700">
                   Hello,{" "}
-                  <span className="font-semibold text-orange-600">
+                  <span className="font-semibold text-green-800">
                     {session.user?.name || session.user?.email}
                   </span>
                 </p>
@@ -111,7 +111,7 @@ export default async function HomePage() {
                 <Link href="/dashboard">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-lg px-8 py-6"
+                    className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800 text-lg px-8 py-6"
                   >
                     <Rocket className="mr-2 h-5 w-5" />
                     Go to Dashboard
@@ -121,7 +121,7 @@ export default async function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-orange-300 text-orange-600 hover:bg-orange-50 text-lg px-8 py-6"
+                    className="border-green-300 text-green-800 hover:bg-green-50 text-lg px-8 py-6"
                   >
                     <Send className="mr-2 h-5 w-5" />
                     View Sends
@@ -132,7 +132,7 @@ export default async function HomePage() {
           ) : (
             <>
               {/* CTA for non-logged in users */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-orange-100 mb-8">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100 mb-8">
                 <p className="text-lg text-gray-700">
                   Send gifts, experiences, and personalized touches
                 </p>
@@ -146,7 +146,7 @@ export default async function HomePage() {
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-lg px-8 py-6"
+                    className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800 text-lg px-8 py-6"
                   >
                     <LogIn className="mr-2 h-5 w-5" />
                     Sign In
@@ -156,7 +156,7 @@ export default async function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-orange-300 text-orange-600 hover:bg-orange-50 text-lg px-8 py-6"
+                    className="border-green-300 text-green-800 hover:bg-green-50 text-lg px-8 py-6"
                   >
                     <Rocket className="mr-2 h-5 w-5" />
                     Get Started
@@ -172,7 +172,7 @@ export default async function HomePage() {
               (feature) => (
                 <span
                   key={feature}
-                  className="px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full text-sm font-medium text-gray-600 border border-orange-100"
+                  className="px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full text-sm font-medium text-gray-600 border border-green-100"
                 >
                   {feature}
                 </span>

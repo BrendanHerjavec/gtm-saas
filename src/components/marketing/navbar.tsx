@@ -42,7 +42,7 @@ export function Navbar() {
             <Button variant="ghost">Sign In</Button>
           </Link>
           <Link href="/register">
-            <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+            <Button className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800">
               Get Started
             </Button>
           </Link>
@@ -89,7 +89,7 @@ export function Navbar() {
               <Button variant="ghost" className="w-full">Sign In</Button>
             </Link>
             <Link href="/register">
-              <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-500">
+              <Button className="w-full bg-gradient-to-r from-green-800 to-emerald-700">
                 Get Started
               </Button>
             </Link>
