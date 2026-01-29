@@ -465,7 +465,7 @@ export async function createDeckFromCampaign(
 
   // Create tasks for all recipients
   await prisma.outreachTask.createMany({
-    data: campaign.recipients.map((cr) => ({
+    data: campaign.recipients.map((cr: { recipientId: string; recipient: { firstName: string | null; lastName: string | null; company: string | null; notes: string | null } }) => ({
       recipientId: cr.recipientId,
       taskType,
       title: taskTitles[taskType],
@@ -582,15 +582,16 @@ export async function updateDeckStats(deckId: string) {
     _count: true,
   });
 
-  const totalTasks = stats.reduce((sum, s) => sum + s._count, 0);
-  const completedTasks = stats.find((s) => s.status === "COMPLETED")?._count || 0;
-  const skippedTasks = stats.find((s) => s.status === "SKIPPED")?._count || 0;
+  type StatEntry = { status: string; _count: number };
+  const totalTasks = stats.reduce((sum: number, s: StatEntry) => sum + s._count, 0);
+  const completedTasks = stats.find((s: StatEntry) => s.status === "COMPLETED")?._count || 0;
+  const skippedTasks = stats.find((s: StatEntry) => s.status === "SKIPPED")?._count || 0;
 
   // Check if deck should be marked as completed
   const pendingOrInProgress = stats.filter(
-    (s) => s.status === "PENDING" || s.status === "IN_PROGRESS"
+    (s: StatEntry) => s.status === "PENDING" || s.status === "IN_PROGRESS"
   );
-  const allDone = pendingOrInProgress.length === 0 || pendingOrInProgress.every((s) => s._count === 0);
+  const allDone = pendingOrInProgress.length === 0 || pendingOrInProgress.every((s: StatEntry) => s._count === 0);
 
   await prisma.taskDeck.update({
     where: { id: deckId },
@@ -852,8 +853,9 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
   });
 
   // Get completion stats for each user
+  type UserEntry = { id: string; name: string | null; email: string | null; image: string | null };
   const userStats = await Promise.all(
-    users.map(async (user) => {
+    users.map(async (user: UserEntry) => {
       const whereClause: Record<string, unknown> = {
         completedById: user.id,
         status: "COMPLETED",
