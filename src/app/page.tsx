@@ -87,7 +87,7 @@ export default async function HomePage() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Add high-touch gifting and personalized experiences to your campaigns that close deals.
+            Add high-touch gifting and personalized experiences on top of your existing CRM.
           </p>
 
           {/* Conditional Content based on auth state */}
@@ -102,7 +102,7 @@ export default async function HomePage() {
                   </span>
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Ready to accelerate your sales pipeline?
+                  Ready to make every deal personal?
                 </p>
               </div>
 
@@ -137,7 +137,7 @@ export default async function HomePage() {
                   Send gifts, experiences, and personalized touches
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Integrate with your CRM to add moments that matter
+                  The gifting layer for your existing CRM
                 </p>
               </div>
 
@@ -168,7 +168,7 @@ export default async function HomePage() {
 
           {/* Feature Pills */}
           <div className="mt-12 flex flex-wrap justify-center gap-3">
-            {["Gift Sending", "Personalized Touches", "CRM Integration", "Budget Tracking", "Experience Booking"].map(
+            {["Gift Sending", "Personalized Touches", "CRM Sync", "Budget Tracking", "Experience Booking"].map(
               (feature) => (
                 <span
                   key={feature}

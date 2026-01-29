@@ -366,7 +366,7 @@ export async function getTaskDeckStats() {
     }),
   ]);
 
-  const byType: Record<string, number> = {
+  const byType: { GIFT: number; HANDWRITTEN_NOTE: number; VIDEO: number; EXPERIENCE: number; DIRECT_MAIL: number } = {
     GIFT: 0,
     HANDWRITTEN_NOTE: 0,
     VIDEO: 0,
@@ -375,7 +375,9 @@ export async function getTaskDeckStats() {
   };
 
   for (const result of byTypeResults) {
-    byType[result.taskType] = result._count;
+    if (result.taskType in byType) {
+      byType[result.taskType as keyof typeof byType] = result._count;
+    }
   }
 
   return {
@@ -648,11 +650,11 @@ export async function generateTasksFromCampaign(
       select: { recipientId: true },
     });
 
-    const existingRecipientIds = new Set(existingTasks.map((t) => t.recipientId));
+    const existingRecipientIds = new Set(existingTasks.map((t: { recipientId: string }) => t.recipientId));
 
     // Filter out recipients who already have pending tasks
     const recipientsToAdd = campaign.recipients.filter(
-      (cr) => !existingRecipientIds.has(cr.recipientId)
+      (cr: { recipientId: string }) => !existingRecipientIds.has(cr.recipientId)
     );
 
     if (recipientsToAdd.length === 0) {
@@ -683,7 +685,7 @@ export async function generateTasksFromCampaign(
 
     // Create tasks for all recipients
     const tasks = await prisma.outreachTask.createMany({
-      data: recipientsToAdd.map((cr) => ({
+      data: recipientsToAdd.map((cr: { recipientId: string; recipient: { firstName: string | null; lastName: string | null; company: string | null; notes: string | null } }) => ({
         recipientId: cr.recipientId,
         taskType,
         title: taskTitles[taskType],

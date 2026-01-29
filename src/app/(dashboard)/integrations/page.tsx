@@ -84,7 +84,7 @@ export default function IntegrationsPage({
 
       {/* CRM Integration Section */}
       <section>
-        <h2 className="text-lg font-semibold mb-4">CRM Integration</h2>
+        <h2 className="text-lg font-semibold mb-4">Sync from Your CRM</h2>
         <CRMIntegrationSection />
       </section>
 

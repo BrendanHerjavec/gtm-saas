@@ -675,7 +675,7 @@ export function SettingsClient({
             <CardHeader>
               <CardTitle>Integrations</CardTitle>
               <CardDescription>
-                Connect with CRMs and third-party services
+                Sync recipients from your CRM and connect services
               </CardDescription>
             </CardHeader>
             <CardContent>

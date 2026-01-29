@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome back!</h1>
           <p className="text-muted-foreground">
-            Create meaningful moments that close deals.
+            Your gifting and personal touches at a glance.
           </p>
         </div>
         <Link href="/sends/new">

@@ -202,35 +202,35 @@ export function TaskCard({ task, onComplete, onSkip, onStart, isLoading }: TaskC
               Context & Talking Points
             </h4>
             <div className="space-y-2 text-sm">
-              {context.talkingPoints && Array.isArray(context.talkingPoints) && (
+              {Array.isArray(context.talkingPoints) && (
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   {(context.talkingPoints as string[]).map((point, i) => (
                     <li key={i}>{point}</li>
                   ))}
                 </ul>
               )}
-              {context.recentActivity && (
+              {typeof context.recentActivity === "string" && (
                 <p className="text-muted-foreground">
                   <span className="font-medium text-foreground">Recent Activity:</span>{" "}
-                  {context.recentActivity as string}
+                  {context.recentActivity}
                 </p>
               )}
-              {context.dealValue && (
+              {typeof context.dealValue === "string" && (
                 <p className="text-muted-foreground">
                   <span className="font-medium text-foreground">Deal Value:</span>{" "}
-                  {context.dealValue as string}
+                  {context.dealValue}
                 </p>
               )}
-              {context.recentNews && (
+              {typeof context.recentNews === "string" && (
                 <p className="text-muted-foreground">
                   <span className="font-medium text-foreground">Recent News:</span>{" "}
-                  {context.recentNews as string}
+                  {context.recentNews}
                 </p>
               )}
-              {context.personalNote && (
+              {typeof context.personalNote === "string" && (
                 <p className="text-muted-foreground">
                   <span className="font-medium text-foreground">Note:</span>{" "}
-                  {context.personalNote as string}
+                  {context.personalNote}
                 </p>
               )}
             </div>

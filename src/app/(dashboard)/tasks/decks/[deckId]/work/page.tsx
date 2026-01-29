@@ -30,7 +30,7 @@ export default async function DeckWorkPage({ params }: DeckWorkPageProps) {
 
   // Get pending/in-progress tasks for this deck
   const tasks = deck.tasks?.filter(
-    (t) => t.status === "PENDING" || t.status === "IN_PROGRESS"
+    (t: { status: string }) => t.status === "PENDING" || t.status === "IN_PROGRESS"
   ) || [];
 
   return (

@@ -167,7 +167,7 @@ export function Hero() {
               className="px-4 py-1.5 text-sm font-medium border-primary/30 bg-primary/5"
             >
               <Sparkles className="h-3.5 w-3.5 mr-2 text-primary animate-pulse" />
-              The Future of Sales Engagement
+              The Gifting Layer for Your CRM
               <Star className="h-3.5 w-3.5 ml-2 text-yellow-500 animate-wiggle" />
             </Badge>
           </div>
@@ -180,7 +180,7 @@ export function Hero() {
                 : "opacity-0 translate-y-8"
             }`}
           >
-            <span className="block">Outbound and engagement</span>
+            <span className="block">Gifts and touches</span>
             <span className="relative inline-block mt-2">
               <span className="bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
                 {typedText}
@@ -220,7 +220,7 @@ export function Hero() {
                 className="relative overflow-hidden bg-gradient-to-r from-green-700 to-emerald-600 hover:from-green-800 hover:to-emerald-700 text-lg h-12 px-8 shadow-lg shadow-green-500/25 group"
               >
                 <span className="relative z-10 flex items-center">
-                  Build your first human campaign
+                  Start sending personal touches
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </span>
                 <div className="absolute inset-0 animate-shimmer" />

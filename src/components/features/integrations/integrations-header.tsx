@@ -10,8 +10,8 @@ export function IntegrationsHeader() {
         <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>
       </div>
       <p className="mt-2 text-muted-foreground">
-        Connect your tools to sync contacts, trigger campaigns, and track results
-        automatically.
+        Sync recipients from your CRM so you can start sending gifts and personal
+        touches right away.
       </p>
     </div>
   );
