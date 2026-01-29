@@ -29,25 +29,25 @@ const features = [
   },
   {
     icon: Users,
-    title: "CRM Integration",
+    title: "CRM Sync",
     description:
-      "Seamlessly sync with HubSpot, Salesforce, and other CRMs to personalize every touchpoint.",
+      "Pull recipients from HubSpot, Salesforce, or Attio so you always know who to send to.",
     color: "#3B82F6",
     gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Zap,
-    title: "Multi-Step Campaigns",
+    title: "Gifting Campaigns",
     description:
-      "Build automated sequences that combine emails, delays, and physical gestures.",
+      "Group sends into campaigns that combine handwritten notes, gifts, and experiences.",
     color: "#8B5CF6",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: BarChart3,
-    title: "ROI Analytics",
+    title: "Gifting Analytics",
     description:
-      "Track meetings booked, replies received, and cost per engagement across all campaigns.",
+      "Track delivery rates, spend per recipient, and budget usage across all your gifting.",
     color: "#10B981",
     gradient: "from-emerald-500 to-green-500",
   },

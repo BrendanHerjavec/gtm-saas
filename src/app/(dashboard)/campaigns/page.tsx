@@ -14,7 +14,7 @@ export default async function CampaignsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
           <p className="text-muted-foreground">
-            Create and manage multi-step outreach campaigns
+            Organize your gifting into campaigns to track delivery and engagement
           </p>
         </div>
         <CreateCampaignDialog />
@@ -123,7 +123,7 @@ async function CampaignsTableWrapper() {
         <Mail className="h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-semibold">No campaigns yet</h3>
         <p className="text-muted-foreground">
-          Create your first campaign to start reaching your audience
+          Create your first gifting campaign to start sending
         </p>
       </div>
     );

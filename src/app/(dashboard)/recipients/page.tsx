@@ -37,7 +37,7 @@ export default async function RecipientsPage({
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Recipients</h1>
           <p className="text-muted-foreground">
-            Manage people who receive your gifts and personalized touches
+            People you send gifts and personal touches to, synced from your CRM
           </p>
         </div>
         <Link href="/recipients/new">
@@ -104,7 +104,7 @@ export default async function RecipientsPage({
               <p className="text-muted-foreground mb-4">
                 {params.search || params.status
                   ? "Try adjusting your filters"
-                  : "Add recipients manually or sync from your CRM"}
+                  : "Add recipients manually or sync them from your CRM"}
               </p>
               {!params.search && !params.status && (
                 <div className="flex gap-2">
