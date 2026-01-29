@@ -4,13 +4,14 @@ import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Layers, ListTodo, Shuffle } from "lucide-react";
+import { Plus, Layers, ListTodo, Shuffle, Trophy } from "lucide-react";
 import {
   DeckGrid,
   CreateDeckDialog,
   RandomDeckDialog,
   TaskDeck,
   TaskDeckHeader,
+  Leaderboard,
 } from "@/components/features/tasks";
 import type { TaskDeckWithCreator } from "@/actions/task-decks";
 import type { OutreachTaskWithRecipient } from "@/actions/tasks";
@@ -111,14 +112,23 @@ export function TasksPageClient({
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="leaderboard" className="gap-2">
+            <Trophy className="h-4 w-4" />
+            Leaderboard
+          </TabsTrigger>
         </TabsList>
 
         {/* Decks Tab */}
         <TabsContent value="decks" className="space-y-6">
-          <DeckGrid
-            decks={decks}
-            onCreateClick={() => setCreateDeckOpen(true)}
-          />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <DeckGrid
+              decks={decks}
+              onCreateClick={() => setCreateDeckOpen(true)}
+            />
+            <div className="hidden lg:block">
+              <Leaderboard />
+            </div>
+          </div>
         </TabsContent>
 
         {/* Tasks Tab - Shows all tasks (legacy task deck view) */}
@@ -134,6 +144,13 @@ export function TasksPageClient({
             initialTotal={taskFilter === "all" ? initialTotal : filteredTasks.length}
             initialPage={1}
           />
+        </TabsContent>
+
+        {/* Leaderboard Tab - Full leaderboard view */}
+        <TabsContent value="leaderboard">
+          <div className="max-w-2xl mx-auto">
+            <Leaderboard />
+          </div>
         </TabsContent>
       </Tabs>
 

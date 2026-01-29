@@ -729,3 +729,214 @@ export async function getAvailableTaskCount() {
     },
   });
 }
+
+export interface LeaderboardEntry {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  completedTasks: number;
+  skippedTasks: number;
+  totalCompleted: number;
+  streak: number;
+  rank: number;
+  isCurrentUser: boolean;
+}
+
+/**
+ * Get leaderboard data for the organization
+ */
+export async function getLeaderboard(period: "week" | "month" | "all" = "week") {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    // Return demo leaderboard data
+    const demoLeaderboard: LeaderboardEntry[] = [
+      {
+        userId: DEMO_USER_ID,
+        name: "You",
+        email: "demo@example.com",
+        image: null,
+        completedTasks: 12,
+        skippedTasks: 2,
+        totalCompleted: 12,
+        streak: 5,
+        rank: 1,
+        isCurrentUser: true,
+      },
+      {
+        userId: "demo-user-2",
+        name: "Sarah Chen",
+        email: "sarah@example.com",
+        image: null,
+        completedTasks: 10,
+        skippedTasks: 1,
+        totalCompleted: 10,
+        streak: 3,
+        rank: 2,
+        isCurrentUser: false,
+      },
+      {
+        userId: "demo-user-3",
+        name: "Mike Johnson",
+        email: "mike@example.com",
+        image: null,
+        completedTasks: 8,
+        skippedTasks: 3,
+        totalCompleted: 8,
+        streak: 2,
+        rank: 3,
+        isCurrentUser: false,
+      },
+      {
+        userId: "demo-user-4",
+        name: "Emily Davis",
+        email: "emily@example.com",
+        image: null,
+        completedTasks: 6,
+        skippedTasks: 0,
+        totalCompleted: 6,
+        streak: 6,
+        rank: 4,
+        isCurrentUser: false,
+      },
+      {
+        userId: "demo-user-5",
+        name: "Alex Thompson",
+        email: "alex@example.com",
+        image: null,
+        completedTasks: 4,
+        skippedTasks: 2,
+        totalCompleted: 4,
+        streak: 1,
+        rank: 5,
+        isCurrentUser: false,
+      },
+    ];
+
+    return {
+      leaderboard: demoLeaderboard,
+      currentUserRank: 1,
+      totalParticipants: 5,
+      period,
+    };
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId || !session?.user?.id) {
+    return { leaderboard: [], currentUserRank: 0, totalParticipants: 0, period };
+  }
+
+  // Calculate date range based on period
+  let startDate: Date | undefined;
+  const now = new Date();
+
+  if (period === "week") {
+    startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - 7);
+  } else if (period === "month") {
+    startDate = new Date(now);
+    startDate.setMonth(startDate.getMonth() - 1);
+  }
+
+  // Get all users in the organization
+  const users = await prisma.user.findMany({
+    where: {
+      organizationId: session.user.organizationId,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  });
+
+  // Get completion stats for each user
+  const userStats = await Promise.all(
+    users.map(async (user) => {
+      const whereClause: Record<string, unknown> = {
+        completedById: user.id,
+        status: "COMPLETED",
+      };
+
+      if (startDate) {
+        whereClause.completedAt = { gte: startDate };
+      }
+
+      const [completed, skipped] = await Promise.all([
+        prisma.outreachTask.count({
+          where: whereClause,
+        }),
+        prisma.outreachTask.count({
+          where: {
+            ...whereClause,
+            status: "SKIPPED",
+          },
+        }),
+      ]);
+
+      // Calculate streak (consecutive days with completions)
+      const recentCompletions = await prisma.outreachTask.findMany({
+        where: {
+          completedById: user.id,
+          status: "COMPLETED",
+          completedAt: { not: null },
+        },
+        orderBy: { completedAt: "desc" },
+        take: 30,
+        select: { completedAt: true },
+      });
+
+      let streak = 0;
+      if (recentCompletions.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let checkDate = new Date(today);
+        for (const completion of recentCompletions) {
+          if (!completion.completedAt) continue;
+
+          const completionDate = new Date(completion.completedAt);
+          completionDate.setHours(0, 0, 0, 0);
+
+          if (completionDate.getTime() === checkDate.getTime()) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else if (completionDate.getTime() < checkDate.getTime()) {
+            break;
+          }
+        }
+      }
+
+      return {
+        userId: user.id,
+        name: user.name || "Unknown",
+        email: user.email || "",
+        image: user.image,
+        completedTasks: completed,
+        skippedTasks: skipped,
+        totalCompleted: completed,
+        streak,
+        isCurrentUser: user.id === session.user.id,
+      };
+    })
+  );
+
+  // Sort by completed tasks (descending) and assign ranks
+  const sortedStats = userStats
+    .filter((s) => s.completedTasks > 0 || s.isCurrentUser)
+    .sort((a, b) => b.completedTasks - a.completedTasks)
+    .map((stat, index) => ({
+      ...stat,
+      rank: index + 1,
+    }));
+
+  const currentUserRank = sortedStats.find((s) => s.isCurrentUser)?.rank || 0;
+
+  return {
+    leaderboard: sortedStats.slice(0, 10) as LeaderboardEntry[],
+    currentUserRank,
+    totalParticipants: sortedStats.length,
+    period,
+  };
+}
