@@ -4,10 +4,11 @@ import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Layers, ListTodo } from "lucide-react";
+import { Plus, Layers, ListTodo, Shuffle } from "lucide-react";
 import {
   DeckGrid,
   CreateDeckDialog,
+  RandomDeckDialog,
   TaskDeck,
   TaskDeckHeader,
 } from "@/components/features/tasks";
@@ -44,6 +45,7 @@ export function TasksPageClient({
   initialStats,
 }: TasksPageClientProps) {
   const [createDeckOpen, setCreateDeckOpen] = useState(false);
+  const [randomDeckOpen, setRandomDeckOpen] = useState(false);
   const [taskFilter, setTaskFilter] = useState("all");
 
   // Filter tasks that don't belong to any deck (loose tasks)
@@ -76,10 +78,16 @@ export function TasksPageClient({
             Organize tasks into decks and work through them
           </p>
         </div>
-        <Button onClick={() => setCreateDeckOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Deck
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setRandomDeckOpen(true)}>
+            <Shuffle className="h-4 w-4 mr-2" />
+            Random Pack
+          </Button>
+          <Button onClick={() => setCreateDeckOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Deck
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -133,6 +141,12 @@ export function TasksPageClient({
       <CreateDeckDialog
         open={createDeckOpen}
         onOpenChange={setCreateDeckOpen}
+      />
+
+      {/* Random Deck Dialog */}
+      <RandomDeckDialog
+        open={randomDeckOpen}
+        onOpenChange={setRandomDeckOpen}
       />
     </div>
   );

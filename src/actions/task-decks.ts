@@ -605,3 +605,127 @@ export async function updateDeckStats(deckId: string) {
   revalidatePath("/tasks");
   revalidatePath(`/tasks/decks/${deckId}`);
 }
+
+/**
+ * Create a random deck with randomly selected tasks
+ */
+export async function createRandomDeck(taskCount: number) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
+
+    // Shuffle and pick random tasks
+    const availableTasks = demoOutreachTasks.filter(
+      (t) => t.status === "PENDING" || t.status === "IN_PROGRESS"
+    );
+
+    if (availableTasks.length === 0) {
+      return { success: false, error: "No available tasks to add to deck" };
+    }
+
+    const count = Math.min(taskCount, availableTasks.length);
+
+    // Create a mock deck for demo mode
+    const randomEmojis = ["🎲", "🎰", "🃏", "🎯", "⚡", "🔥", "✨", "🚀"];
+    const randomColors = ["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"];
+
+    return {
+      success: true,
+      deckId: "demo-random-deck",
+      count,
+      message: `Created random deck with ${count} tasks (demo mode)`,
+    };
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId || !session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get available tasks (pending/in-progress, not in a deck)
+  const availableTasks = await prisma.outreachTask.findMany({
+    where: {
+      organizationId: session.user.organizationId,
+      deckId: null,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+    select: { id: true },
+  });
+
+  if (availableTasks.length === 0) {
+    return { success: false, error: "No available tasks to add to deck" };
+  }
+
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffled = [...availableTasks];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  // Take the requested number of tasks
+  const count = Math.min(taskCount, shuffled.length);
+  const selectedTaskIds = shuffled.slice(0, count).map((t) => t.id);
+
+  // Random deck styling
+  const randomEmojis = ["🎲", "🎰", "🃏", "🎯", "⚡", "🔥", "✨", "🚀"];
+  const randomColors = ["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"];
+  const emoji = randomEmojis[Math.floor(Math.random() * randomEmojis.length)];
+  const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+
+  // Create the deck
+  const deck = await prisma.taskDeck.create({
+    data: {
+      name: `Random Pack (${count} tasks)`,
+      description: "A randomly generated pack of tasks to work through",
+      coverColor: color,
+      emoji: emoji,
+      status: "SEALED",
+      totalTasks: count,
+      sourceType: "random",
+      organizationId: session.user.organizationId,
+      createdById: session.user.id,
+    },
+  });
+
+  // Assign selected tasks to this deck
+  await prisma.outreachTask.updateMany({
+    where: {
+      id: { in: selectedTaskIds },
+      organizationId: session.user.organizationId,
+    },
+    data: {
+      deckId: deck.id,
+    },
+  });
+
+  revalidatePath("/tasks");
+  return { success: true, deckId: deck.id, count };
+}
+
+/**
+ * Get count of available tasks for random deck creation
+ */
+export async function getAvailableTaskCount() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { demoOutreachTasks } = await import("@/lib/demo-data");
+    const available = demoOutreachTasks.filter(
+      (t) => t.status === "PENDING" || t.status === "IN_PROGRESS"
+    );
+    return available.length;
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    return 0;
+  }
+
+  return prisma.outreachTask.count({
+    where: {
+      organizationId: session.user.organizationId,
+      deckId: null,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+  });
+}

@@ -7,3 +7,4 @@ export { CreateTaskForm } from "./create-task-form";
 export { DeckCard } from "./deck-card";
 export { DeckGrid } from "./deck-grid";
 export { CreateDeckDialog } from "./create-deck-dialog";
+export { RandomDeckDialog } from "./random-deck-dialog";
