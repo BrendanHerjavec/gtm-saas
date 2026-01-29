@@ -30,8 +30,8 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    name: "Outreach",
-    href: "/outreach",
+    name: "Tasks",
+    href: "/tasks",
     icon: Layers,
   },
   {

@@ -1,9 +1,9 @@
 import { getRecipients } from "@/actions/recipients";
-import { CreateTaskForm } from "@/components/features/outreach/create-task-form";
+import { CreateTaskForm } from "@/components/features/tasks/create-task-form";
 
 export const metadata = {
   title: "Create Task | GTM SaaS",
-  description: "Create a new outreach task",
+  description: "Create a new task",
 };
 
 export default async function NewTaskPage() {
@@ -12,9 +12,9 @@ export default async function NewTaskPage() {
   return (
     <div className="container max-w-4xl py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Create Outreach Task</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Create Task</h1>
         <p className="text-muted-foreground mt-2">
-          Create a new task to add to your outreach deck.
+          Create a new task to add to your task deck.
         </p>
       </div>
 

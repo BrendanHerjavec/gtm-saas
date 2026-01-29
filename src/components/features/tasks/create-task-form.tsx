@@ -24,7 +24,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { createOutreachTask } from "@/actions/outreach-tasks";
+import { createOutreachTask } from "@/actions/tasks";
 import type { CreateOutreachTaskInput } from "@/lib/validations";
 
 interface Recipient {
@@ -91,7 +91,7 @@ export function CreateTaskForm({ recipients }: CreateTaskFormProps) {
         };
 
         await createOutreachTask(input);
-        router.push("/outreach");
+        router.push("/tasks");
       } catch (error) {
         console.error("Failed to create task:", error);
         setErrors({ submit: "Failed to create task. Please try again." });
@@ -105,11 +105,11 @@ export function CreateTaskForm({ recipients }: CreateTaskFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Back Link */}
       <Link
-        href="/outreach"
+        href="/tasks"
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to Outreach Deck
+        Back to Task Deck
       </Link>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -255,7 +255,7 @@ export function CreateTaskForm({ recipients }: CreateTaskFormProps) {
                   rows={5}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This will be displayed on the task card to help guide the outreach.
+                  This will be displayed on the task card to help guide the task.
                 </p>
               </div>
             </CardContent>

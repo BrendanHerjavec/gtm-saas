@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import type { OutreachTaskWithRecipient } from "@/actions/outreach-tasks";
+import type { OutreachTaskWithRecipient } from "@/actions/tasks";
 
 interface CompleteTaskDialogProps {
   open: boolean;
@@ -73,7 +73,7 @@ export function CompleteTaskDialog({
             Complete Task
           </DialogTitle>
           <DialogDescription>
-            Add any details about the completed outreach before marking it done.
+            Add any details about the completed task before marking it done.
           </DialogDescription>
         </DialogHeader>
 

@@ -64,6 +64,7 @@ model Organization {
   crmIntegration CRMIntegration?
   vendors        Vendor[]
   outreachTasks  OutreachTask[]
+  taskDecks      TaskDeck[]
 }
 
 // CRM Integration - One per Organization (for syncing recipients)
@@ -129,6 +130,7 @@ model User {
   campaigns      Campaign[]
   assignedTasks  OutreachTask[] @relation("AssignedTasks")
   completedTasks OutreachTask[] @relation("CompletedTasks")
+  createdDecks   TaskDeck[]
 }
 
 // =====================
@@ -425,6 +427,46 @@ model CampaignStats {
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
+// Task Deck - A collection of tasks that can be "opened" like a card pack
+model TaskDeck {
+  id             String    @id @default(uuid())
+
+  // Basic info
+  name           String
+  description    String?   @db.Text
+
+  // Visual customization
+  coverColor     String?   // Hex color (e.g., "#3B82F6")
+  emoji          String?   // Optional emoji icon
+
+  // Status tracking
+  status         String    @default("SEALED") // SEALED | OPENING | OPENED | COMPLETED
+  openedAt       DateTime?
+  completedAt    DateTime?
+
+  // Stats (denormalized for performance)
+  totalTasks     Int       @default(0)
+  completedTasks Int       @default(0)
+  skippedTasks   Int       @default(0)
+
+  // Source - how was this deck created?
+  sourceType     String?   // "campaign" | "manual" | "import"
+  sourceId       String?   // Reference to campaign ID if from campaign
+
+  // Multi-tenancy
+  organizationId String
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  tasks          OutreachTask[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdById])
+}
+
 // Outreach Tasks - Card deck for working through outreach actions
 model OutreachTask {
   id             String    @id @default(uuid())
@@ -446,6 +488,9 @@ model OutreachTask {
 
   // Optional campaign linkage
   campaignId     String?
+
+  // Optional deck linkage
+  deckId         String?
 
   // Result tracking - links to Send when completed
   sendId         String?   @unique
@@ -469,6 +514,7 @@ model OutreachTask {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   recipient      Recipient    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   campaign       Campaign?    @relation(fields: [campaignId], references: [id])
+  deck           TaskDeck?    @relation(fields: [deckId], references: [id])
   send           Send?        @relation(fields: [sendId], references: [id])
   assignedTo     User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
   completedBy    User?        @relation("CompletedTasks", fields: [completedById], references: [id])
@@ -477,6 +523,7 @@ model OutreachTask {
   @@index([organizationId, assignedToId, status])
   @@index([recipientId])
   @@index([campaignId])
+  @@index([deckId])
 }
 
 // Budget Management

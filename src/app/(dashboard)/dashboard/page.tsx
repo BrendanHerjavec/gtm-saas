@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSendStats } from "@/actions/sends";
 import { getBudgetSummary } from "@/actions/budget";
-import { getTaskDeckStats } from "@/actions/outreach-tasks";
+import { getTaskDeckStats } from "@/actions/tasks";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
         <SendStatusOverview />
       </Suspense>
 
-      {/* Outreach Tasks Widget */}
+      {/* Tasks Widget */}
       <Suspense
         fallback={
           <Card>
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
           </Card>
         }
       >
-        <OutreachTasksWidget />
+        <TasksWidget />
       </Suspense>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -328,7 +328,7 @@ async function BudgetOverviewCard() {
   );
 }
 
-async function OutreachTasksWidget() {
+async function TasksWidget() {
   const stats = await getTaskDeckStats();
 
   const taskTypes = [
@@ -349,13 +349,13 @@ async function OutreachTasksWidget() {
             <Layers className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>Outreach Deck</CardTitle>
+            <CardTitle>Task Deck</CardTitle>
             <p className="text-sm text-muted-foreground">
               {hasNoTasks ? "No tasks waiting" : `${stats.actionable} tasks to complete`}
             </p>
           </div>
         </div>
-        <Link href="/outreach">
+        <Link href="/tasks">
           <Button>
             {hasNoTasks ? "Create Task" : "Start Working"}
             <ArrowRight className="ml-2 h-4 w-4" />

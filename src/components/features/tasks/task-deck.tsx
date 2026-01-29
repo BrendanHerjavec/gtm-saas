@@ -14,12 +14,12 @@ import {
 import { TaskCard } from "./task-card";
 import { CompleteTaskDialog } from "./complete-task-dialog";
 import { SkipTaskDialog } from "./skip-task-dialog";
-import type { OutreachTaskWithRecipient } from "@/actions/outreach-tasks";
+import type { OutreachTaskWithRecipient } from "@/actions/tasks";
 import {
   completeOutreachTask,
   skipOutreachTask,
   startOutreachTask,
-} from "@/actions/outreach-tasks";
+} from "@/actions/tasks";
 
 interface TaskDeckProps {
   initialTasks: OutreachTaskWithRecipient[];
@@ -181,9 +181,9 @@ export function TaskDeck({ initialTasks, initialTotal, initialPage }: TaskDeckPr
         </div>
         <h2 className="text-2xl font-semibold mb-2">All caught up!</h2>
         <p className="text-muted-foreground max-w-md">
-          You&apos;ve completed all your outreach tasks. Great job! Check back later or create new tasks to continue your outreach.
+          You&apos;ve completed all your tasks. Great job! Check back later or create new tasks to continue.
         </p>
-        <Button className="mt-6" onClick={() => router.push("/outreach/new")}>
+        <Button className="mt-6" onClick={() => router.push("/tasks/new")}>
           Create New Task
         </Button>
       </div>

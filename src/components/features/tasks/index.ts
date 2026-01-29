@@ -4,3 +4,6 @@ export { TaskDeckHeader } from "./task-deck-header";
 export { CompleteTaskDialog } from "./complete-task-dialog";
 export { SkipTaskDialog } from "./skip-task-dialog";
 export { CreateTaskForm } from "./create-task-form";
+export { DeckCard } from "./deck-card";
+export { DeckGrid } from "./deck-grid";
+export { CreateDeckDialog } from "./create-deck-dialog";

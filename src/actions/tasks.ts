@@ -417,7 +417,7 @@ export async function createOutreachTask(input: CreateOutreachTaskInput) {
     },
   });
 
-  revalidatePath("/outreach");
+  revalidatePath("/tasks");
   return task;
 }
 
@@ -438,8 +438,8 @@ export async function updateOutreachTask(id: string, input: UpdateOutreachTaskIn
     data: input,
   });
 
-  revalidatePath("/outreach");
-  revalidatePath(`/outreach/${id}`);
+  revalidatePath("/tasks");
+  revalidatePath(`/tasks/${id}`);
   return task;
 }
 
@@ -462,7 +462,7 @@ export async function startOutreachTask(id: string) {
     },
   });
 
-  revalidatePath("/outreach");
+  revalidatePath("/tasks");
   return task;
 }
 
@@ -515,7 +515,7 @@ export async function completeOutreachTask(input: CompleteOutreachTaskInput) {
     },
   });
 
-  revalidatePath("/outreach");
+  revalidatePath("/tasks");
   revalidatePath("/sends");
   return { task: updatedTask, send };
 }
@@ -542,7 +542,7 @@ export async function skipOutreachTask(id: string, reason?: string) {
     },
   });
 
-  revalidatePath("/outreach");
+  revalidatePath("/tasks");
   return task;
 }
 
@@ -562,7 +562,7 @@ export async function deleteOutreachTask(id: string) {
     },
   });
 
-  revalidatePath("/outreach");
+  revalidatePath("/tasks");
   return { success: true };
 }
 
@@ -597,7 +597,7 @@ export async function createBatchOutreachTasks(
     })),
   });
 
-  revalidatePath("/outreach");
+  revalidatePath("/tasks");
   return { count: tasks.count };
 }
 
@@ -703,7 +703,7 @@ export async function generateTasksFromCampaign(
       })),
     });
 
-    revalidatePath("/outreach");
+    revalidatePath("/tasks");
     revalidatePath(`/campaigns/${campaignId}`);
 
     return { success: true, count: tasks.count };
