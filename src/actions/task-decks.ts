@@ -128,10 +128,24 @@ export async function getTaskDeck(id: string) {
     const deck = demoTaskDecks.find((d) => d.id === id);
     if (!deck) return null;
 
+    // Import demo tasks and recipients for demo mode
+    const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
+
+    // For demo, associate tasks with this deck based on deck index
+    const deckIndex = demoTaskDecks.findIndex((d) => d.id === id);
+    const tasksPerDeck = Math.ceil(demoOutreachTasks.length / demoTaskDecks.length);
+    const startIdx = deckIndex * tasksPerDeck;
+    const deckTasks = demoOutreachTasks.slice(startIdx, startIdx + deck.totalTasks).map((task) => ({
+      ...task,
+      deckId: id,
+      recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+    }));
+
     return {
       ...deck,
       createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
-    } as TaskDeckWithCreator;
+      tasks: deckTasks,
+    };
   }
 
   const session = await getAuthSession();
