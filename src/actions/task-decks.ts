@@ -139,6 +139,9 @@ export async function getTaskDeck(id: string) {
       ...task,
       deckId: id,
       recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+      assignedTo: task.assignedToId
+        ? { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" }
+        : null,
     }));
 
     return {
