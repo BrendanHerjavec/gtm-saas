@@ -743,17 +743,39 @@ export interface LeaderboardEntry {
   skippedTasks: number;
   totalCompleted: number;
   streak: number;
+  bestStreak: number;
   rank: number;
   isCurrentUser: boolean;
+  // Analytics fields
+  completionRate: number; // Percentage (0-100)
+  avgPerDay: number; // Average tasks completed per day in period
+  tasksByType: {
+    VIDEO: number;
+    HANDWRITTEN_NOTE: number;
+    GIFT: number;
+    EXPERIENCE: number;
+    DIRECT_MAIL: number;
+  };
+  trend: "up" | "down" | "same"; // Compared to previous period
+  previousRank: number | null; // Rank in previous period
+}
+
+export interface LeaderboardStats {
+  teamTotal: number;
+  teamAvgPerUser: number;
+  topTaskType: string;
+  periodDays: number;
 }
 
 /**
  * Get leaderboard data for the organization
  */
 export async function getLeaderboard(period: "week" | "month" | "all" = "week") {
+  const periodDays = period === "week" ? 7 : period === "month" ? 30 : 365;
+
   // Check for demo mode first
   if (await isDemoMode()) {
-    // Return demo leaderboard data
+    // Return demo leaderboard data with full analytics
     const demoLeaderboard: LeaderboardEntry[] = [
       {
         userId: DEMO_USER_ID,
@@ -764,8 +786,14 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         skippedTasks: 2,
         totalCompleted: 12,
         streak: 5,
+        bestStreak: 8,
         rank: 1,
         isCurrentUser: true,
+        completionRate: 86,
+        avgPerDay: 1.7,
+        tasksByType: { VIDEO: 5, HANDWRITTEN_NOTE: 3, GIFT: 2, EXPERIENCE: 1, DIRECT_MAIL: 1 },
+        trend: "up",
+        previousRank: 2,
       },
       {
         userId: "demo-user-2",
@@ -776,8 +804,14 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         skippedTasks: 1,
         totalCompleted: 10,
         streak: 3,
+        bestStreak: 7,
         rank: 2,
         isCurrentUser: false,
+        completionRate: 91,
+        avgPerDay: 1.4,
+        tasksByType: { VIDEO: 4, HANDWRITTEN_NOTE: 2, GIFT: 3, EXPERIENCE: 1, DIRECT_MAIL: 0 },
+        trend: "down",
+        previousRank: 1,
       },
       {
         userId: "demo-user-3",
@@ -788,8 +822,14 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         skippedTasks: 3,
         totalCompleted: 8,
         streak: 2,
+        bestStreak: 4,
         rank: 3,
         isCurrentUser: false,
+        completionRate: 73,
+        avgPerDay: 1.1,
+        tasksByType: { VIDEO: 2, HANDWRITTEN_NOTE: 1, GIFT: 3, EXPERIENCE: 2, DIRECT_MAIL: 0 },
+        trend: "same",
+        previousRank: 3,
       },
       {
         userId: "demo-user-4",
@@ -800,8 +840,14 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         skippedTasks: 0,
         totalCompleted: 6,
         streak: 6,
+        bestStreak: 12,
         rank: 4,
         isCurrentUser: false,
+        completionRate: 100,
+        avgPerDay: 0.9,
+        tasksByType: { VIDEO: 2, HANDWRITTEN_NOTE: 2, GIFT: 1, EXPERIENCE: 0, DIRECT_MAIL: 1 },
+        trend: "up",
+        previousRank: 5,
       },
       {
         userId: "demo-user-5",
@@ -812,16 +858,30 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         skippedTasks: 2,
         totalCompleted: 4,
         streak: 1,
+        bestStreak: 3,
         rank: 5,
         isCurrentUser: false,
+        completionRate: 67,
+        avgPerDay: 0.6,
+        tasksByType: { VIDEO: 1, HANDWRITTEN_NOTE: 1, GIFT: 1, EXPERIENCE: 1, DIRECT_MAIL: 0 },
+        trend: "down",
+        previousRank: 4,
       },
     ];
+
+    const stats: LeaderboardStats = {
+      teamTotal: 40,
+      teamAvgPerUser: 8,
+      topTaskType: "VIDEO",
+      periodDays,
+    };
 
     return {
       leaderboard: demoLeaderboard,
       currentUserRank: 1,
       totalParticipants: 5,
       period,
+      stats,
     };
   }
 
@@ -832,14 +892,22 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
 
   // Calculate date range based on period
   let startDate: Date | undefined;
+  let previousStartDate: Date | undefined;
+  let previousEndDate: Date | undefined;
   const now = new Date();
 
   if (period === "week") {
     startDate = new Date(now);
     startDate.setDate(startDate.getDate() - 7);
+    previousStartDate = new Date(startDate);
+    previousStartDate.setDate(previousStartDate.getDate() - 7);
+    previousEndDate = new Date(startDate);
   } else if (period === "month") {
     startDate = new Date(now);
     startDate.setMonth(startDate.getMonth() - 1);
+    previousStartDate = new Date(startDate);
+    previousStartDate.setMonth(previousStartDate.getMonth() - 1);
+    previousEndDate = new Date(startDate);
   }
 
   // Get all users in the organization
@@ -855,6 +923,9 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
     },
   });
 
+  // Task types for grouping
+  const taskTypes = ["VIDEO", "HANDWRITTEN_NOTE", "GIFT", "EXPERIENCE", "DIRECT_MAIL"] as const;
+
   // Get completion stats for each user
   type UserEntry = { id: string; name: string | null; email: string | null; image: string | null };
   const userStats = await Promise.all(
@@ -868,17 +939,55 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         whereClause.completedAt = { gte: startDate };
       }
 
+      // Get completed and skipped counts
       const [completed, skipped] = await Promise.all([
         prisma.outreachTask.count({
           where: whereClause,
         }),
         prisma.outreachTask.count({
           where: {
-            ...whereClause,
+            completedById: user.id,
             status: "SKIPPED",
+            ...(startDate && { completedAt: { gte: startDate } }),
           },
         }),
       ]);
+
+      // Get previous period stats for trend calculation
+      let previousCompleted = 0;
+      if (previousStartDate && previousEndDate) {
+        previousCompleted = await prisma.outreachTask.count({
+          where: {
+            completedById: user.id,
+            status: "COMPLETED",
+            completedAt: { gte: previousStartDate, lt: previousEndDate },
+          },
+        });
+      }
+
+      // Get tasks by type
+      const tasksByTypeResults = await prisma.outreachTask.groupBy({
+        by: ["taskType"],
+        where: {
+          completedById: user.id,
+          status: "COMPLETED",
+          ...(startDate && { completedAt: { gte: startDate } }),
+        },
+        _count: true,
+      });
+
+      const tasksByType = {
+        VIDEO: 0,
+        HANDWRITTEN_NOTE: 0,
+        GIFT: 0,
+        EXPERIENCE: 0,
+        DIRECT_MAIL: 0,
+      };
+      for (const result of tasksByTypeResults) {
+        if (result.taskType in tasksByType) {
+          tasksByType[result.taskType as keyof typeof tasksByType] = result._count;
+        }
+      }
 
       // Calculate streak (consecutive days with completions)
       const recentCompletions = await prisma.outreachTask.findMany({
@@ -888,29 +997,67 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
           completedAt: { not: null },
         },
         orderBy: { completedAt: "desc" },
-        take: 30,
+        take: 60, // Look at more days for best streak
         select: { completedAt: true },
       });
 
       let streak = 0;
+      let bestStreak = 0;
+      let currentStreak = 0;
+
       if (recentCompletions.length > 0) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         let checkDate = new Date(today);
+        let lastDate: Date | null = null;
+
         for (const completion of recentCompletions) {
           if (!completion.completedAt) continue;
 
           const completionDate = new Date(completion.completedAt);
           completionDate.setHours(0, 0, 0, 0);
 
-          if (completionDate.getTime() === checkDate.getTime()) {
-            streak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-          } else if (completionDate.getTime() < checkDate.getTime()) {
-            break;
+          // Current streak calculation
+          if (streak === currentStreak) {
+            if (completionDate.getTime() === checkDate.getTime()) {
+              streak++;
+              currentStreak++;
+              checkDate.setDate(checkDate.getDate() - 1);
+            } else if (completionDate.getTime() < checkDate.getTime()) {
+              // Streak broken, but continue for best streak
+            }
           }
+
+          // Best streak calculation
+          if (lastDate === null) {
+            currentStreak = 1;
+          } else {
+            const diffDays = Math.round((lastDate.getTime() - completionDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays === 1) {
+              currentStreak++;
+            } else if (diffDays > 1) {
+              bestStreak = Math.max(bestStreak, currentStreak);
+              currentStreak = 1;
+            }
+          }
+          lastDate = completionDate;
         }
+        bestStreak = Math.max(bestStreak, currentStreak, streak);
+      }
+
+      // Calculate completion rate
+      const totalAttempted = completed + skipped;
+      const completionRate = totalAttempted > 0 ? Math.round((completed / totalAttempted) * 100) : 0;
+
+      // Calculate average per day
+      const avgPerDay = Math.round((completed / periodDays) * 10) / 10;
+
+      // Determine trend
+      let trend: "up" | "down" | "same" = "same";
+      if (previousCompleted > 0 || completed > 0) {
+        if (completed > previousCompleted) trend = "up";
+        else if (completed < previousCompleted) trend = "down";
       }
 
       return {
@@ -922,6 +1069,12 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
         skippedTasks: skipped,
         totalCompleted: completed,
         streak,
+        bestStreak,
+        completionRate,
+        avgPerDay,
+        tasksByType,
+        trend,
+        previousCompleted,
         isCurrentUser: user.id === session.user.id,
       };
     })
@@ -936,12 +1089,50 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
       rank: index + 1,
     }));
 
-  const currentUserRank = sortedStats.find((s) => s.isCurrentUser)?.rank || 0;
+  // Calculate previous ranks for trend arrows
+  const previousSortedStats = [...userStats]
+    .sort((a, b) => b.previousCompleted - a.previousCompleted)
+    .map((stat, index) => ({
+      userId: stat.userId,
+      previousRank: stat.previousCompleted > 0 ? index + 1 : null,
+    }));
+
+  // Merge previous ranks
+  const finalStats = sortedStats.map((stat) => {
+    const prev = previousSortedStats.find((p) => p.userId === stat.userId);
+    return {
+      ...stat,
+      previousRank: prev?.previousRank || null,
+    };
+  });
+
+  const currentUserRank = finalStats.find((s) => s.isCurrentUser)?.rank || 0;
+
+  // Calculate team stats
+  const teamTotal = userStats.reduce((sum, s) => sum + s.completedTasks, 0);
+  const activeUsers = userStats.filter((s) => s.completedTasks > 0).length;
+  const teamAvgPerUser = activeUsers > 0 ? Math.round(teamTotal / activeUsers) : 0;
+
+  // Find top task type
+  const typeAggregation = taskTypes.reduce((acc, type) => {
+    acc[type] = userStats.reduce((sum, s) => sum + s.tasksByType[type], 0);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topTaskType = Object.entries(typeAggregation).sort((a, b) => b[1] - a[1])[0]?.[0] || "VIDEO";
+
+  const stats: LeaderboardStats = {
+    teamTotal,
+    teamAvgPerUser,
+    topTaskType,
+    periodDays,
+  };
 
   return {
-    leaderboard: sortedStats.slice(0, 10) as LeaderboardEntry[],
+    leaderboard: finalStats.slice(0, 10) as LeaderboardEntry[],
     currentUserRank,
     totalParticipants: sortedStats.length,
     period,
+    stats,
   };
 }
