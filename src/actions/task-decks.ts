@@ -128,10 +128,24 @@ export async function getTaskDeck(id: string) {
     const deck = demoTaskDecks.find((d) => d.id === id);
     if (!deck) return null;
 
+    // Import demo tasks and recipients for demo mode
+    const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
+
+    // For demo, associate tasks with this deck based on deck index
+    const deckIndex = demoTaskDecks.findIndex((d) => d.id === id);
+    const tasksPerDeck = Math.ceil(demoOutreachTasks.length / demoTaskDecks.length);
+    const startIdx = deckIndex * tasksPerDeck;
+    const deckTasks = demoOutreachTasks.slice(startIdx, startIdx + deck.totalTasks).map((task) => ({
+      ...task,
+      deckId: id,
+      recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+    }));
+
     return {
       ...deck,
       createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
-    } as TaskDeckWithCreator;
+      tasks: deckTasks,
+    };
   }
 
   const session = await getAuthSession();
@@ -451,7 +465,7 @@ export async function createDeckFromCampaign(
 
   // Create tasks for all recipients
   await prisma.outreachTask.createMany({
-    data: campaign.recipients.map((cr) => ({
+    data: campaign.recipients.map((cr: { recipientId: string; recipient: { firstName: string | null; lastName: string | null; company: string | null; notes: string | null } }) => ({
       recipientId: cr.recipientId,
       taskType,
       title: taskTitles[taskType],
@@ -568,15 +582,16 @@ export async function updateDeckStats(deckId: string) {
     _count: true,
   });
 
-  const totalTasks = stats.reduce((sum, s) => sum + s._count, 0);
-  const completedTasks = stats.find((s) => s.status === "COMPLETED")?._count || 0;
-  const skippedTasks = stats.find((s) => s.status === "SKIPPED")?._count || 0;
+  type StatEntry = { status: string; _count: number };
+  const totalTasks = stats.reduce((sum: number, s: StatEntry) => sum + s._count, 0);
+  const completedTasks = stats.find((s: StatEntry) => s.status === "COMPLETED")?._count || 0;
+  const skippedTasks = stats.find((s: StatEntry) => s.status === "SKIPPED")?._count || 0;
 
   // Check if deck should be marked as completed
   const pendingOrInProgress = stats.filter(
-    (s) => s.status === "PENDING" || s.status === "IN_PROGRESS"
+    (s: StatEntry) => s.status === "PENDING" || s.status === "IN_PROGRESS"
   );
-  const allDone = pendingOrInProgress.length === 0 || pendingOrInProgress.every((s) => s._count === 0);
+  const allDone = pendingOrInProgress.length === 0 || pendingOrInProgress.every((s: StatEntry) => s._count === 0);
 
   await prisma.taskDeck.update({
     where: { id: deckId },
@@ -590,4 +605,340 @@ export async function updateDeckStats(deckId: string) {
 
   revalidatePath("/tasks");
   revalidatePath(`/tasks/decks/${deckId}`);
+}
+
+/**
+ * Create a random deck with randomly selected tasks
+ */
+export async function createRandomDeck(taskCount: number) {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
+
+    // Shuffle and pick random tasks
+    const availableTasks = demoOutreachTasks.filter(
+      (t) => t.status === "PENDING" || t.status === "IN_PROGRESS"
+    );
+
+    if (availableTasks.length === 0) {
+      return { success: false, error: "No available tasks to add to deck" };
+    }
+
+    const count = Math.min(taskCount, availableTasks.length);
+
+    // Create a mock deck for demo mode
+    const randomEmojis = ["🎲", "🎰", "🃏", "🎯", "⚡", "🔥", "✨", "🚀"];
+    const randomColors = ["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"];
+
+    return {
+      success: true,
+      deckId: "demo-random-deck",
+      count,
+      message: `Created random deck with ${count} tasks (demo mode)`,
+    };
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId || !session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get available tasks (pending/in-progress, not in a deck)
+  const availableTasks = await prisma.outreachTask.findMany({
+    where: {
+      organizationId: session.user.organizationId,
+      deckId: null,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+    select: { id: true },
+  });
+
+  if (availableTasks.length === 0) {
+    return { success: false, error: "No available tasks to add to deck" };
+  }
+
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffled = [...availableTasks];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  // Take the requested number of tasks
+  const count = Math.min(taskCount, shuffled.length);
+  const selectedTaskIds = shuffled.slice(0, count).map((t) => t.id);
+
+  // Random deck styling
+  const randomEmojis = ["🎲", "🎰", "🃏", "🎯", "⚡", "🔥", "✨", "🚀"];
+  const randomColors = ["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"];
+  const emoji = randomEmojis[Math.floor(Math.random() * randomEmojis.length)];
+  const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+
+  // Create the deck
+  const deck = await prisma.taskDeck.create({
+    data: {
+      name: `Random Pack (${count} tasks)`,
+      description: "A randomly generated pack of tasks to work through",
+      coverColor: color,
+      emoji: emoji,
+      status: "SEALED",
+      totalTasks: count,
+      sourceType: "random",
+      organizationId: session.user.organizationId,
+      createdById: session.user.id,
+    },
+  });
+
+  // Assign selected tasks to this deck
+  await prisma.outreachTask.updateMany({
+    where: {
+      id: { in: selectedTaskIds },
+      organizationId: session.user.organizationId,
+    },
+    data: {
+      deckId: deck.id,
+    },
+  });
+
+  revalidatePath("/tasks");
+  return { success: true, deckId: deck.id, count };
+}
+
+/**
+ * Get count of available tasks for random deck creation
+ */
+export async function getAvailableTaskCount() {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    const { demoOutreachTasks } = await import("@/lib/demo-data");
+    const available = demoOutreachTasks.filter(
+      (t) => t.status === "PENDING" || t.status === "IN_PROGRESS"
+    );
+    return available.length;
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    return 0;
+  }
+
+  return prisma.outreachTask.count({
+    where: {
+      organizationId: session.user.organizationId,
+      deckId: null,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+  });
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  completedTasks: number;
+  skippedTasks: number;
+  totalCompleted: number;
+  streak: number;
+  rank: number;
+  isCurrentUser: boolean;
+}
+
+/**
+ * Get leaderboard data for the organization
+ */
+export async function getLeaderboard(period: "week" | "month" | "all" = "week") {
+  // Check for demo mode first
+  if (await isDemoMode()) {
+    // Return demo leaderboard data
+    const demoLeaderboard: LeaderboardEntry[] = [
+      {
+        userId: DEMO_USER_ID,
+        name: "You",
+        email: "demo@example.com",
+        image: null,
+        completedTasks: 12,
+        skippedTasks: 2,
+        totalCompleted: 12,
+        streak: 5,
+        rank: 1,
+        isCurrentUser: true,
+      },
+      {
+        userId: "demo-user-2",
+        name: "Sarah Chen",
+        email: "sarah@example.com",
+        image: null,
+        completedTasks: 10,
+        skippedTasks: 1,
+        totalCompleted: 10,
+        streak: 3,
+        rank: 2,
+        isCurrentUser: false,
+      },
+      {
+        userId: "demo-user-3",
+        name: "Mike Johnson",
+        email: "mike@example.com",
+        image: null,
+        completedTasks: 8,
+        skippedTasks: 3,
+        totalCompleted: 8,
+        streak: 2,
+        rank: 3,
+        isCurrentUser: false,
+      },
+      {
+        userId: "demo-user-4",
+        name: "Emily Davis",
+        email: "emily@example.com",
+        image: null,
+        completedTasks: 6,
+        skippedTasks: 0,
+        totalCompleted: 6,
+        streak: 6,
+        rank: 4,
+        isCurrentUser: false,
+      },
+      {
+        userId: "demo-user-5",
+        name: "Alex Thompson",
+        email: "alex@example.com",
+        image: null,
+        completedTasks: 4,
+        skippedTasks: 2,
+        totalCompleted: 4,
+        streak: 1,
+        rank: 5,
+        isCurrentUser: false,
+      },
+    ];
+
+    return {
+      leaderboard: demoLeaderboard,
+      currentUserRank: 1,
+      totalParticipants: 5,
+      period,
+    };
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId || !session?.user?.id) {
+    return { leaderboard: [], currentUserRank: 0, totalParticipants: 0, period };
+  }
+
+  // Calculate date range based on period
+  let startDate: Date | undefined;
+  const now = new Date();
+
+  if (period === "week") {
+    startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - 7);
+  } else if (period === "month") {
+    startDate = new Date(now);
+    startDate.setMonth(startDate.getMonth() - 1);
+  }
+
+  // Get all users in the organization
+  const users = await prisma.user.findMany({
+    where: {
+      organizationId: session.user.organizationId,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  });
+
+  // Get completion stats for each user
+  type UserEntry = { id: string; name: string | null; email: string | null; image: string | null };
+  const userStats = await Promise.all(
+    users.map(async (user: UserEntry) => {
+      const whereClause: Record<string, unknown> = {
+        completedById: user.id,
+        status: "COMPLETED",
+      };
+
+      if (startDate) {
+        whereClause.completedAt = { gte: startDate };
+      }
+
+      const [completed, skipped] = await Promise.all([
+        prisma.outreachTask.count({
+          where: whereClause,
+        }),
+        prisma.outreachTask.count({
+          where: {
+            ...whereClause,
+            status: "SKIPPED",
+          },
+        }),
+      ]);
+
+      // Calculate streak (consecutive days with completions)
+      const recentCompletions = await prisma.outreachTask.findMany({
+        where: {
+          completedById: user.id,
+          status: "COMPLETED",
+          completedAt: { not: null },
+        },
+        orderBy: { completedAt: "desc" },
+        take: 30,
+        select: { completedAt: true },
+      });
+
+      let streak = 0;
+      if (recentCompletions.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let checkDate = new Date(today);
+        for (const completion of recentCompletions) {
+          if (!completion.completedAt) continue;
+
+          const completionDate = new Date(completion.completedAt);
+          completionDate.setHours(0, 0, 0, 0);
+
+          if (completionDate.getTime() === checkDate.getTime()) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else if (completionDate.getTime() < checkDate.getTime()) {
+            break;
+          }
+        }
+      }
+
+      return {
+        userId: user.id,
+        name: user.name || "Unknown",
+        email: user.email || "",
+        image: user.image,
+        completedTasks: completed,
+        skippedTasks: skipped,
+        totalCompleted: completed,
+        streak,
+        isCurrentUser: user.id === session.user.id,
+      };
+    })
+  );
+
+  // Sort by completed tasks (descending) and assign ranks
+  const sortedStats = userStats
+    .filter((s) => s.completedTasks > 0 || s.isCurrentUser)
+    .sort((a, b) => b.completedTasks - a.completedTasks)
+    .map((stat, index) => ({
+      ...stat,
+      rank: index + 1,
+    }));
+
+  const currentUserRank = sortedStats.find((s) => s.isCurrentUser)?.rank || 0;
+
+  return {
+    leaderboard: sortedStats.slice(0, 10) as LeaderboardEntry[],
+    currentUserRank,
+    totalParticipants: sortedStats.length,
+    period,
+  };
 }

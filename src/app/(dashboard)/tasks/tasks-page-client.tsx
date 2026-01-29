@@ -4,12 +4,14 @@ import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Layers, ListTodo } from "lucide-react";
+import { Plus, Layers, ListTodo, Shuffle, Trophy } from "lucide-react";
 import {
   DeckGrid,
   CreateDeckDialog,
+  RandomDeckDialog,
   TaskDeck,
   TaskDeckHeader,
+  Leaderboard,
 } from "@/components/features/tasks";
 import type { TaskDeckWithCreator } from "@/actions/task-decks";
 import type { OutreachTaskWithRecipient } from "@/actions/tasks";
@@ -44,6 +46,7 @@ export function TasksPageClient({
   initialStats,
 }: TasksPageClientProps) {
   const [createDeckOpen, setCreateDeckOpen] = useState(false);
+  const [randomDeckOpen, setRandomDeckOpen] = useState(false);
   const [taskFilter, setTaskFilter] = useState("all");
 
   // Filter tasks that don't belong to any deck (loose tasks)
@@ -76,10 +79,16 @@ export function TasksPageClient({
             Organize tasks into decks and work through them
           </p>
         </div>
-        <Button onClick={() => setCreateDeckOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Deck
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setRandomDeckOpen(true)}>
+            <Shuffle className="h-4 w-4 mr-2" />
+            Random Pack
+          </Button>
+          <Button onClick={() => setCreateDeckOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Deck
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -103,14 +112,23 @@ export function TasksPageClient({
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="leaderboard" className="gap-2">
+            <Trophy className="h-4 w-4" />
+            Leaderboard
+          </TabsTrigger>
         </TabsList>
 
         {/* Decks Tab */}
         <TabsContent value="decks" className="space-y-6">
-          <DeckGrid
-            decks={decks}
-            onCreateClick={() => setCreateDeckOpen(true)}
-          />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <DeckGrid
+              decks={decks}
+              onCreateClick={() => setCreateDeckOpen(true)}
+            />
+            <div className="hidden lg:block">
+              <Leaderboard />
+            </div>
+          </div>
         </TabsContent>
 
         {/* Tasks Tab - Shows all tasks (legacy task deck view) */}
@@ -127,12 +145,25 @@ export function TasksPageClient({
             initialPage={1}
           />
         </TabsContent>
+
+        {/* Leaderboard Tab - Full leaderboard view */}
+        <TabsContent value="leaderboard">
+          <div className="max-w-2xl mx-auto">
+            <Leaderboard />
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Create Deck Dialog */}
       <CreateDeckDialog
         open={createDeckOpen}
         onOpenChange={setCreateDeckOpen}
+      />
+
+      {/* Random Deck Dialog */}
+      <RandomDeckDialog
+        open={randomDeckOpen}
+        onOpenChange={setRandomDeckOpen}
       />
     </div>
   );
