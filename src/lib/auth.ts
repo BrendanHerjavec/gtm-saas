@@ -78,6 +78,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.organizationId = session.organizationId;
       }
 
+      // If organizationId is missing, try to fetch it from DB
+      // This handles users who had no org at login but got one created later
+      if (!token.organizationId && token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { organizationId: true, role: true },
+          });
+          if (dbUser?.organizationId) {
+            token.organizationId = dbUser.organizationId;
+            token.role = dbUser.role;
+          }
+        } catch {
+          // Silently ignore DB errors in token refresh
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
