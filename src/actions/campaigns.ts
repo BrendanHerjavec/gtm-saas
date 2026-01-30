@@ -210,28 +210,34 @@ export async function createCampaign(data: {
 
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    throw new Error("Unauthorized");
+    throw new Error("Unauthorized: no organizationId in session");
   }
 
-  const campaign = await prisma.campaign.create({
-    data: {
-      name: data.name,
-      description,
-      type: data.type || "MANUAL",
-      organizationId: session.user.organizationId,
-      createdById: session.user.id,
-    },
-  });
+  try {
+    const campaign = await prisma.campaign.create({
+      data: {
+        name: data.name,
+        description,
+        type: data.type || "MANUAL",
+        organizationId: session.user.organizationId,
+        createdById: session.user.id,
+      },
+    });
 
-  // Create initial stats
-  await prisma.campaignStats.create({
-    data: {
-      campaignId: campaign.id,
-    },
-  });
+    // Create initial stats
+    await prisma.campaignStats.create({
+      data: {
+        campaignId: campaign.id,
+      },
+    });
 
-  revalidatePath("/campaigns");
-  return campaign;
+    revalidatePath("/campaigns");
+    return campaign;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("createCampaign DB error:", message);
+    throw new Error(`Failed to create campaign: ${message}`);
+  }
 }
 
 export async function updateCampaign(
