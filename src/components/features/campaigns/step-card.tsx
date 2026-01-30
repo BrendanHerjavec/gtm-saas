@@ -49,7 +49,7 @@ export type StepType = "EMAIL" | "GESTURE" | "DELAY";
 
 export interface CampaignStep {
   id: string;
-  stepType: StepType;
+  stepType: string;
   stepOrder: number;
   emailSubject?: string | null;
   emailContent?: string | null;

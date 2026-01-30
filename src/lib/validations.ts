@@ -78,11 +78,11 @@ export const createGiftItemSchema = z.object({
   description: z.string().max(2000).optional(),
   imageUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   price: z.coerce.number().min(0, "Price must be positive"),
-  currency: z.string().length(3).default("USD"),
+  currency: z.string().length(3),
   categoryId: z.string().optional(),
   vendorId: z.string().optional(),
   sku: z.string().max(100).optional(),
-  type: giftItemTypeEnum.default("PHYSICAL"),
+  type: giftItemTypeEnum,
   duration: z.string().max(100).optional(),
   location: z.string().max(200).optional(),
   tags: z.string().max(500).optional(),
@@ -99,7 +99,7 @@ export type UpdateGiftItemInput = z.infer<typeof updateGiftItemSchema>;
 // Campaign schemas
 export const campaignStatusEnum = z.enum(["DRAFT", "ACTIVE", "PAUSED", "COMPLETED", "CANCELLED"]);
 
-export const createCampaignSchema = z.object({
+export const campaignBaseSchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
   description: z.string().max(2000).optional(),
   startDate: z.coerce.date().optional(),
@@ -107,7 +107,9 @@ export const createCampaignSchema = z.object({
   budgetId: z.string().optional(),
   targetCount: z.coerce.number().int().min(0).optional(),
   tags: z.string().max(500).optional(),
-}).refine(
+});
+
+export const createCampaignSchema = campaignBaseSchema.refine(
   (data) => {
     if (data.startDate && data.endDate) {
       return data.endDate >= data.startDate;
@@ -117,7 +119,7 @@ export const createCampaignSchema = z.object({
   { message: "End date must be after start date", path: ["endDate"] }
 );
 
-export const updateCampaignSchema = createCampaignSchema.partial().extend({
+export const updateCampaignSchema = campaignBaseSchema.partial().extend({
   status: campaignStatusEnum.optional(),
 });
 
@@ -127,15 +129,17 @@ export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
 // Budget schemas
 export const budgetPeriodEnum = z.enum(["MONTHLY", "QUARTERLY", "ANNUAL", "CUSTOM"]);
 
-export const createBudgetSchema = z.object({
+export const budgetBaseSchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
   totalAmount: z.coerce.number().min(0, "Amount must be positive"),
-  period: budgetPeriodEnum.default("MONTHLY"),
+  period: budgetPeriodEnum,
   startDate: z.coerce.date(),
   endDate: z.coerce.date().optional(),
   alertThreshold: z.coerce.number().min(0).max(100).optional(),
   notes: z.string().max(2000).optional(),
-}).refine(
+});
+
+export const createBudgetSchema = budgetBaseSchema.refine(
   (data) => {
     if (data.startDate && data.endDate) {
       return data.endDate >= data.startDate;
@@ -145,7 +149,7 @@ export const createBudgetSchema = z.object({
   { message: "End date must be after start date", path: ["endDate"] }
 );
 
-export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
+export type CreateBudgetInput = z.infer<typeof budgetBaseSchema>;
 
 // Category schema
 export const createCategorySchema = z.object({

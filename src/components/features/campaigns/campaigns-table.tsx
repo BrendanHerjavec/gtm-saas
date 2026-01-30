@@ -26,11 +26,9 @@ import {
   createEditAction,
   createDeleteAction,
 } from "@/components/ui/row-actions";
-import { deleteCampaign, updateCampaign } from "@/actions/campaigns";
+import { deleteCampaign, updateCampaign, type CampaignStatus } from "@/actions/campaigns";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
-
-type CampaignStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "COMPLETED" | "CANCELLED";
 
 type Campaign = {
   id: string;

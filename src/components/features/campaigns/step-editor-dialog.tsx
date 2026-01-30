@@ -92,7 +92,7 @@ export function StepEditorDialog({
     if (!currentType) return;
 
     await onSave({
-      stepType: currentType,
+      stepType: currentType as StepType,
       emailSubject: currentType === "EMAIL" ? emailSubject : undefined,
       emailContent: currentType === "EMAIL" ? emailContent : undefined,
       gestureId: currentType === "GESTURE" ? gestureId : undefined,

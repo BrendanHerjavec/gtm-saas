@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo-mode";
 import { demoCampaigns, demoSends, DEMO_USER_ID } from "@/lib/demo-data";
 
-export type CampaignStatus = "DRAFT" | "SCHEDULED" | "RUNNING" | "PAUSED" | "COMPLETED";
-export type CampaignType = "EMAIL" | "SEQUENCE" | "SMS";
+export type CampaignStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "COMPLETED" | "CANCELLED";
+export type CampaignType = "MANUAL" | "TRIGGERED" | "SCHEDULED";
 
 export async function getCampaigns(params?: {
   status?: CampaignStatus;
@@ -124,8 +124,7 @@ export async function getCampaign(id: string) {
       id,
       name,
       description: campaign?.description || null,
-      subject: campaign?.subject || null,
-      content: campaign?.content || null,
+      triggerRules: campaign?.triggerRules || null,
       status: campaign?.status || "DRAFT",
       type: campaign?.type || "SEQUENCE",
       budgetAmount: campaign?.budgetAmount || 0,

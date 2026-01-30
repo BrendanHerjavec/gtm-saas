@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createBudget, updateBudget } from "@/actions/budget";
-import { createBudgetSchema, type CreateBudgetInput } from "@/lib/validations";
+import { budgetBaseSchema, type CreateBudgetInput } from "@/lib/validations";
 import { useToast } from "@/hooks/use-toast";
 
 type Budget = {
@@ -61,7 +61,7 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
     watch,
     formState: { errors },
   } = useForm<CreateBudgetInput>({
-    resolver: zodResolver(createBudgetSchema),
+    resolver: zodResolver(budgetBaseSchema),
     defaultValues: {
       name: budget?.name || "",
       totalAmount: budget?.amount || 0,

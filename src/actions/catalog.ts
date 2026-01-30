@@ -24,7 +24,9 @@ export async function getCatalog(params: GetCatalogParams = {}) {
     const { type = "all", categoryId, search, inStock, page = 1, limit = 20 } = params;
     let filtered = demoGiftItems.map(item => ({
       ...item,
-      category: item.categoryId ? demoGiftCategories.find(c => c.id === item.categoryId) : null,
+      duration: item.duration ?? null,
+      location: item.location ?? null,
+      category: item.categoryId ? demoGiftCategories.find(c => c.id === item.categoryId) || null : null,
       vendor: null,
     }));
 
@@ -125,7 +127,9 @@ export async function getGiftItem(id: string) {
 
     return {
       ...item,
-      category: item.categoryId ? demoGiftCategories.find(c => c.id === item.categoryId) : null,
+      duration: item.duration ?? null,
+      location: item.location ?? null,
+      category: item.categoryId ? demoGiftCategories.find(c => c.id === item.categoryId) || null : null,
       vendor: null,
     };
   }

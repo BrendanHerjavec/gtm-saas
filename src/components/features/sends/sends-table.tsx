@@ -28,7 +28,7 @@ type Send = {
     email: string;
     firstName: string | null;
     lastName: string | null;
-  };
+  } | null;
   giftItem?: {
     id: string;
     name: string;
@@ -122,10 +122,10 @@ export function SendsTable({ sends }: SendsTableProps) {
                 <td className="py-3 px-4">
                   <div>
                     <div className="font-medium">
-                      {send.recipient.firstName} {send.recipient.lastName}
+                      {send.recipient ? `${send.recipient.firstName} ${send.recipient.lastName}` : "Unknown"}
                     </div>
                     <div className="text-muted-foreground text-xs">
-                      {send.recipient.email}
+                      {send.recipient?.email || "-"}
                     </div>
                   </div>
                 </td>

@@ -25,9 +25,9 @@ export async function getSends(params: GetSendsParams = {}) {
     const { status = "all", type = "all", recipientId, campaignId, page = 1, limit = 20 } = params;
     let filtered = demoSends.map(send => ({
       ...send,
-      recipient: demoRecipients.find(r => r.id === send.recipientId),
-      giftItem: send.giftItemId ? demoGiftItems.find(g => g.id === send.giftItemId) : null,
-      campaign: send.campaignId ? demoCampaigns.find(c => c.id === send.campaignId) : null,
+      recipient: demoRecipients.find(r => r.id === send.recipientId) || null,
+      giftItem: send.giftItemId ? demoGiftItems.find(g => g.id === send.giftItemId) || null : null,
+      campaign: send.campaignId ? demoCampaigns.find(c => c.id === send.campaignId) || null : null,
       user: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
     }));
 
@@ -118,9 +118,9 @@ export async function getSend(id: string) {
 
     return {
       ...send,
-      recipient: demoRecipients.find(r => r.id === send.recipientId),
-      giftItem: send.giftItemId ? demoGiftItems.find(g => g.id === send.giftItemId) : null,
-      campaign: send.campaignId ? demoCampaigns.find(c => c.id === send.campaignId) : null,
+      recipient: demoRecipients.find(r => r.id === send.recipientId) || null,
+      giftItem: send.giftItemId ? demoGiftItems.find(g => g.id === send.giftItemId) || null : null,
+      campaign: send.campaignId ? demoCampaigns.find(c => c.id === send.campaignId) || null : null,
       vendor: null,
       user: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
       activities: [],

@@ -200,62 +200,21 @@ export async function disconnectIntegration(): Promise<{
       where: { id: integration.id },
     });
 
-    // Clear external references from all synced records
+    // Clear external references from all synced recipients
     // Keep the data but mark as no longer synced
-    await prisma.$transaction([
-      prisma.lead.updateMany({
-        where: {
-          organizationId: session.user.organizationId,
-          externalId: { not: null },
-        },
-        data: {
-          externalId: null,
-          externalSource: null,
-          externalUrl: null,
-          syncStatus: null,
-          lastSyncedAt: null,
-        },
-      }),
-      prisma.contact.updateMany({
-        where: {
-          organizationId: session.user.organizationId,
-          externalId: { not: null },
-        },
-        data: {
-          externalId: null,
-          externalSource: null,
-          externalUrl: null,
-          syncStatus: null,
-          lastSyncedAt: null,
-        },
-      }),
-      prisma.company.updateMany({
-        where: {
-          organizationId: session.user.organizationId,
-          externalId: { not: null },
-        },
-        data: {
-          externalId: null,
-          externalSource: null,
-          externalUrl: null,
-          syncStatus: null,
-          lastSyncedAt: null,
-        },
-      }),
-      prisma.deal.updateMany({
-        where: {
-          organizationId: session.user.organizationId,
-          externalId: { not: null },
-        },
-        data: {
-          externalId: null,
-          externalSource: null,
-          externalUrl: null,
-          syncStatus: null,
-          lastSyncedAt: null,
-        },
-      }),
-    ]);
+    await prisma.recipient.updateMany({
+      where: {
+        organizationId: session.user.organizationId,
+        externalId: { not: null },
+      },
+      data: {
+        externalId: null,
+        externalSource: null,
+        externalUrl: null,
+        syncStatus: null,
+        lastSyncedAt: null,
+      },
+    });
 
     revalidatePath("/integrations");
     revalidatePath("/leads");

@@ -10,6 +10,71 @@ export type LeadSource = "WEBSITE" | "REFERRAL" | "LINKEDIN" | "COLD_OUTREACH" |
 // These functions provide analytics based on Recipients (not Leads).
 // The Lead model doesn't exist in the schema.
 
+export async function createLead(data: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  company?: string;
+  jobTitle?: string;
+  source?: string;
+  status?: string;
+  notes?: string;
+}) {
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Create as a recipient since this app uses Recipients
+  const recipient = await prisma.recipient.create({
+    data: {
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      company: data.company,
+      jobTitle: data.jobTitle,
+      notes: data.notes,
+      organizationId: session.user.organizationId,
+    },
+  });
+
+  return recipient;
+}
+
+export async function updateLead(id: string, data: {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  company?: string;
+  jobTitle?: string;
+  source?: string;
+  status?: string;
+  notes?: string;
+}) {
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    throw new Error("Unauthorized");
+  }
+
+  const recipient = await prisma.recipient.update({
+    where: { id },
+    data: {
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      company: data.company,
+      jobTitle: data.jobTitle,
+      notes: data.notes,
+    },
+  });
+
+  return recipient;
+}
+
 export async function getLeads() {
   // Return empty data - this app uses Recipients, not Leads
   return {
@@ -17,6 +82,43 @@ export async function getLeads() {
     pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
     integration: null,
   };
+}
+
+export async function deleteLead(id: string) {
+  // Leads map to Recipients in this app
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    throw new Error("Unauthorized");
+  }
+
+  await prisma.recipient.deleteMany({
+    where: {
+      id,
+      organizationId: session.user.organizationId,
+    },
+  });
+}
+
+export async function convertLeadToContact(id: string) {
+  // In this app, leads are already recipients - this is a no-op
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Verify the recipient exists
+  const recipient = await prisma.recipient.findFirst({
+    where: {
+      id,
+      organizationId: session.user.organizationId,
+    },
+  });
+
+  if (!recipient) {
+    throw new Error("Lead not found");
+  }
+
+  return recipient;
 }
 
 export async function getLeadStats() {

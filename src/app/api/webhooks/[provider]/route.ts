@@ -155,7 +155,7 @@ async function processWebhookEvent(
         await upsertFromWebhook(
           integration.organizationId,
           event.entityType,
-          mapped
+          mapped as unknown as Record<string, unknown>
         );
       }
     }
@@ -195,7 +195,7 @@ async function markRecordDeleted(
 
   // Clear external reference instead of deleting
   // This preserves local data while marking as disconnected
-  await (prisma as Record<string, { updateMany: (args: unknown) => Promise<unknown> }>)[table].updateMany({
+  await (prisma as any)[table].updateMany({
     where: {
       organizationId,
       externalId,
@@ -218,7 +218,7 @@ async function upsertFromWebhook(
   const externalId = mapped.externalId as string;
   const externalSource = mapped.externalSource as string;
 
-  const existing = await (prisma as Record<string, { findFirst: (args: unknown) => Promise<{ id: string } | null> }>)[table].findFirst({
+  const existing = await (prisma as any)[table].findFirst({
     where: {
       organizationId,
       externalId,
@@ -230,7 +230,7 @@ async function upsertFromWebhook(
   const { externalId: _extId, externalSource: _extSource, ...updateData } = mapped;
 
   if (existing) {
-    await (prisma as Record<string, { update: (args: unknown) => Promise<unknown> }>)[table].update({
+    await (prisma as any)[table].update({
       where: { id: existing.id },
       data: {
         ...updateData,
@@ -240,7 +240,7 @@ async function upsertFromWebhook(
   } else {
     // For creates, we need entity-specific handling due to required fields
     // This is simplified - full implementation would mirror sync/index.ts
-    await (prisma as Record<string, { create: (args: unknown) => Promise<unknown> }>)[table].create({
+    await (prisma as any)[table].create({
       data: {
         organizationId,
         ...mapped,
@@ -250,12 +250,7 @@ async function upsertFromWebhook(
   }
 }
 
-function getTableName(entityType: string): string {
-  const tableMap: Record<string, string> = {
-    lead: "lead",
-    contact: "contact",
-    company: "company",
-    deal: "deal",
-  };
-  return tableMap[entityType] || entityType;
+function getTableName(_entityType: string): string {
+  // All CRM entity types map to the recipient table
+  return "recipient";
 }

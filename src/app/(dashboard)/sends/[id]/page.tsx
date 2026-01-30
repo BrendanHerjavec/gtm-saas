@@ -174,10 +174,10 @@ export default async function SendDetailPage({ params }: SendDetailPageProps) {
               </>
             )}
 
-            {send.shippedAt && (
+            {send.sentAt && (
               <div>
-                <p className="text-sm text-muted-foreground">Shipped At</p>
-                <p className="font-medium">{formatDateTime(send.shippedAt)}</p>
+                <p className="text-sm text-muted-foreground">Sent At</p>
+                <p className="font-medium">{formatDateTime(send.sentAt)}</p>
               </div>
             )}
 
@@ -199,57 +199,63 @@ export default async function SendDetailPage({ params }: SendDetailPageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-lg font-semibold text-primary">
-                  {send.recipient.firstName?.[0] || send.recipient.email[0].toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <p className="font-semibold text-lg">
-                  {send.recipient.firstName} {send.recipient.lastName}
-                </p>
-                <p className="text-muted-foreground">{send.recipient.email}</p>
-              </div>
-            </div>
-
-            {(send.recipient.company || send.recipient.jobTitle) && (
+            {send.recipient ? (
               <>
-                <Separator />
-                <div className="space-y-2">
-                  {send.recipient.company && (
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>{send.recipient.company}</span>
-                    </div>
-                  )}
-                  {send.recipient.jobTitle && (
-                    <p className="text-muted-foreground">{send.recipient.jobTitle}</p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {send.shippingAddress && (
-              <>
-                <Separator />
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-lg font-semibold text-primary">
+                      {send.recipient.firstName?.[0] || send.recipient.email[0].toUpperCase()}
+                    </span>
+                  </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Shipping Address</p>
-                    <p className="whitespace-pre-line">{send.shippingAddress}</p>
+                    <p className="font-semibold text-lg">
+                      {send.recipient.firstName} {send.recipient.lastName}
+                    </p>
+                    <p className="text-muted-foreground">{send.recipient.email}</p>
                   </div>
                 </div>
+
+                {(send.recipient.company || send.recipient.jobTitle) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      {send.recipient.company && (
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span>{send.recipient.company}</span>
+                        </div>
+                      )}
+                      {send.recipient.jobTitle && (
+                        <p className="text-muted-foreground">{send.recipient.jobTitle}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {send.shippingAddress && (
+                  <>
+                    <Separator />
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Shipping Address</p>
+                        <p className="whitespace-pre-line">{send.shippingAddress}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+
+                <Link href={`/recipients/${send.recipient.id}`}>
+                  <Button variant="outline" className="w-full">
+                    View Recipient Profile
+                  </Button>
+                </Link>
               </>
+            ) : (
+              <p className="text-muted-foreground">Recipient not found</p>
             )}
-
-            <Separator />
-
-            <Link href={`/recipients/${send.recipient.id}`}>
-              <Button variant="outline" className="w-full">
-                View Recipient Profile
-              </Button>
-            </Link>
           </CardContent>
         </Card>
 
