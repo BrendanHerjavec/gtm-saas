@@ -32,26 +32,38 @@ function LoadingSkeleton() {
 }
 
 async function TasksContent() {
-  const [decksResult, tasksResult, stats] = await Promise.all([
-    getTaskDecks({ limit: 50 }),
-    getOutreachTasks({ status: "PENDING", limit: 50 }),
-    getTaskDeckStats(),
-  ]);
+  try {
+    const [decksResult, tasksResult, stats] = await Promise.all([
+      getTaskDecks({ limit: 50 }),
+      getOutreachTasks({ status: "PENDING", limit: 50 }),
+      getTaskDeckStats(),
+    ]);
 
-  // Include in-progress tasks as well
-  const inProgressResult = await getOutreachTasks({ status: "IN_PROGRESS", limit: 50 });
+    // Include in-progress tasks as well
+    const inProgressResult = await getOutreachTasks({ status: "IN_PROGRESS", limit: 50 });
 
-  // Combine and sort tasks (in-progress first, then by priority)
-  const allTasks = [...inProgressResult.tasks, ...tasksResult.tasks];
+    // Combine and sort tasks (in-progress first, then by priority)
+    const allTasks = [...inProgressResult.tasks, ...tasksResult.tasks];
 
-  return (
-    <TasksPageClient
-      decks={decksResult.decks}
-      initialTasks={allTasks}
-      initialTotal={tasksResult.total + inProgressResult.total}
-      initialStats={stats}
-    />
-  );
+    return (
+      <TasksPageClient
+        decks={decksResult.decks}
+        initialTasks={allTasks}
+        initialTotal={tasksResult.total + inProgressResult.total}
+        initialStats={stats}
+      />
+    );
+  } catch (error) {
+    console.error("TasksContent error:", error);
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg font-semibold">Unable to load tasks</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          {error instanceof Error ? error.message : "An unexpected error occurred"}
+        </p>
+      </div>
+    );
+  }
 }
 
 export default function TasksPage() {
