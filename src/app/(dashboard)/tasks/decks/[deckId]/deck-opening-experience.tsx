@@ -34,13 +34,15 @@ export function DeckOpeningExperience({ deck, tasks }: DeckOpeningExperienceProp
   const [revealedCount, setRevealedCount] = useState(0);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
+  const [transitioning, setTransitioning] = useState(false);
+
   // Handle the opening animation sequence
   const handleOpen = () => {
     startTransition(async () => {
       setPhase("opening");
 
-      // Start the animation
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Let the shake + rip animation play out fully
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       // Update server state
       await openTaskDeck(deck.id);
@@ -48,15 +50,20 @@ export function DeckOpeningExperience({ deck, tasks }: DeckOpeningExperienceProp
       // Move to revealing phase
       setPhase("revealing");
 
-      // Reveal cards one by one
+      // Reveal cards one by one with increasing delay for dramatic effect
       for (let i = 0; i < Math.min(tasks.length, 5); i++) {
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 400 + i * 50));
         setRevealedCount((prev) => prev + 1);
       }
 
-      // Complete reveal
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Hold the fan view so users can appreciate it
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Fade out before switching to revealed view
+      setTransitioning(true);
+      await new Promise((resolve) => setTimeout(resolve, 400));
       setPhase("revealed");
+      setTransitioning(false);
       router.refresh();
     });
   };
@@ -80,11 +87,13 @@ export function DeckOpeningExperience({ deck, tasks }: DeckOpeningExperienceProp
 
   if (phase === "revealing") {
     return (
-      <CardRevealAnimation
-        deck={deck}
-        tasks={tasks}
-        revealedCount={revealedCount}
-      />
+      <div className={`transition-opacity duration-400 ${transitioning ? "opacity-0" : "opacity-100"}`}>
+        <CardRevealAnimation
+          deck={deck}
+          tasks={tasks}
+          revealedCount={revealedCount}
+        />
+      </div>
     );
   }
 
@@ -300,8 +309,10 @@ function CardRevealAnimation({
         })}
       </div>
 
-      <p className="text-muted-foreground">
-        Revealing {revealedCount} of {Math.min(tasks.length, 5)} cards...
+      <p className="text-muted-foreground animate-pulse">
+        {revealedCount < Math.min(tasks.length, 5)
+          ? `Revealing ${revealedCount} of ${Math.min(tasks.length, 5)} cards...`
+          : `${Math.min(tasks.length, 5)} cards revealed!`}
       </p>
     </div>
   );

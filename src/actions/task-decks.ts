@@ -126,27 +126,55 @@ export async function getTaskDeck(id: string) {
   // Check for demo mode first
   if (await isDemoMode()) {
     const deck = demoTaskDecks.find((d) => d.id === id);
-    if (!deck) return null;
 
     // Import demo tasks and recipients for demo mode
     const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
 
-    // Get tasks that belong to this deck by deckId
-    const deckTasks = demoOutreachTasks
-      .filter((t) => t.deckId === id)
-      .map((task) => ({
-        ...task,
-        recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
-        assignedTo: task.assignedToId
-          ? { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" }
-          : null,
-      }));
+    // For known demo decks, get their tasks
+    if (deck) {
+      const deckTasks = demoOutreachTasks
+        .filter((t) => t.deckId === id)
+        .map((task) => ({
+          ...task,
+          recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+          assignedTo: task.assignedToId
+            ? { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" }
+            : null,
+        }));
 
-    return {
-      ...deck,
-      createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
-      tasks: deckTasks,
-    };
+      return {
+        ...deck,
+        createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
+        tasks: deckTasks,
+      };
+    }
+
+    // For newly created demo decks, return a shell with no tasks
+    if (id.startsWith("demo-deck-")) {
+      return {
+        id,
+        name: "New Deck",
+        description: null,
+        coverColor: "#3B82F6",
+        emoji: "📦",
+        status: "SEALED",
+        openedAt: null,
+        completedAt: null,
+        totalTasks: 0,
+        completedTasks: 0,
+        skippedTasks: 0,
+        sourceType: "manual",
+        sourceId: null,
+        organizationId: DEMO_ORG_ID,
+        createdById: DEMO_USER_ID,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
+        tasks: [],
+      };
+    }
+
+    return null;
   }
 
   const session = await getAuthSession();

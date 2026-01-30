@@ -5,6 +5,7 @@ import { IntegrationsHeader } from "@/components/features/integrations/integrati
 import { IntegrationCard, type Integration } from "@/components/features/integrations/integration-card";
 import { CRMProviders } from "@/components/features/integrations/crm-providers";
 import { ConnectedIntegration } from "@/components/features/integrations/connected-integration";
+import { CsvImportSection } from "@/components/features/integrations/csv-import-section";
 import { getIntegrationStatus } from "@/actions/integrations";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, MessageSquare, Calendar, Zap, Webhook } from "lucide-react";
@@ -86,6 +87,12 @@ export default function IntegrationsPage({
       <section>
         <h2 className="text-lg font-semibold mb-4">Sync from Your CRM</h2>
         <CRMIntegrationSection />
+      </section>
+
+      {/* CSV Import Section */}
+      <section>
+        <h2 className="text-lg font-semibold mb-4">Import from CSV</h2>
+        <CsvImportSection />
       </section>
 
       {/* Other Integrations */}

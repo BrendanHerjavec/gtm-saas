@@ -38,12 +38,20 @@ interface ValidatedRow {
   duplicate?: boolean;
 }
 
-export function CsvImportDialog() {
+interface CsvImportDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function CsvImportDialog({ open: controlledOpen, onOpenChange: controlledOnOpenChange }: CsvImportDialogProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
+
   const [step, setStep] = useState<Step>("upload");
   const [rows, setRows] = useState<ValidatedRow[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -200,12 +208,14 @@ export function CsvImportDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Upload className="h-4 w-4" />
-          Import CSV
-        </Button>
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className={step === "preview" ? "max-w-3xl" : "max-w-lg"}>
         {step === "upload" && (
           <>

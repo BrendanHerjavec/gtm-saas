@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export type GestureCategory =
   | "all"
@@ -21,7 +22,40 @@ export interface GetGesturesParams {
   limit?: number;
 }
 
+const demoGestures = [
+  { id: "g1", name: "Tree Planting", description: "Plant a tree in the recipient's name with a personalized certificate.", category: "sustainability", icon: "TreePine", minPrice: 15, maxPrice: 25, currency: "USD", popular: true, isActive: true, sortOrder: 1, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g2", name: "Local Coffee Delivery", description: "Send a coffee from a local cafe near the recipient.", category: "food", icon: "Coffee", minPrice: 20, maxPrice: 35, currency: "USD", popular: true, isActive: true, sortOrder: 2, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g3", name: "Custom Swag Box", description: "Branded swag box with quality items they'll actually use.", category: "gifting", icon: "Gift", minPrice: 50, maxPrice: 150, currency: "USD", popular: false, isActive: true, sortOrder: 3, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g4", name: "Premium Gift Card", description: "Choose from 100+ brands for the perfect gift card.", category: "gifting", icon: "CreditCard", minPrice: 25, maxPrice: 250, currency: "USD", popular: false, isActive: true, sortOrder: 4, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g5", name: "Handwritten Note", description: "A genuine handwritten note on premium stationery.", category: "personal", icon: "PenTool", minPrice: 10, maxPrice: 25, currency: "USD", popular: true, isActive: true, sortOrder: 5, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g6", name: "Treats Box", description: "Curated box of gourmet treats and snacks.", category: "food", icon: "Cookie", minPrice: 40, maxPrice: 80, currency: "USD", popular: false, isActive: true, sortOrder: 6, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g7", name: "Charity Donation", description: "Make a donation to a charity of the recipient's choice.", category: "sustainability", icon: "Heart", minPrice: 25, maxPrice: 100, currency: "USD", popular: false, isActive: true, sortOrder: 7, createdAt: new Date(), updatedAt: new Date() },
+  { id: "g8", name: "Wellness Credit", description: "Credit for wellness apps, classes, or services.", category: "wellness", icon: "Flower2", minPrice: 50, maxPrice: 150, currency: "USD", popular: false, isActive: true, sortOrder: 8, createdAt: new Date(), updatedAt: new Date() },
+];
+
 export async function getGestures(params: GetGesturesParams = {}) {
+  if (await isDemoMode()) {
+    const { category = "all", search, popularOnly = false, page = 1, limit = 50 } = params;
+    let filtered = [...demoGestures];
+
+    if (category !== "all") {
+      filtered = filtered.filter((g) => g.category === category);
+    }
+    if (popularOnly) {
+      filtered = filtered.filter((g) => g.popular);
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter((g) => g.name.toLowerCase().includes(s) || g.description.toLowerCase().includes(s));
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const paged = filtered.slice(start, start + limit);
+
+    return { gestures: paged, total, page, totalPages: Math.ceil(total / limit) };
+  }
+
   const {
     category = "all",
     search,
@@ -69,6 +103,10 @@ export async function getGestures(params: GetGesturesParams = {}) {
 }
 
 export async function getGesture(id: string) {
+  if (await isDemoMode()) {
+    return demoGestures.find((g) => g.id === id) || null;
+  }
+
   return prisma.gesture.findFirst({
     where: {
       id,

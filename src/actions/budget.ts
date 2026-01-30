@@ -222,7 +222,13 @@ export async function getBudgetSummary() {
 
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    return null;
+    return {
+      activeBudget: null,
+      monthlySpend: 0,
+      totalSpend: 0,
+      remaining: null,
+      percentUsed: null,
+    };
   }
 
   const now = new Date();

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo-mode";
+import { demoCampaigns } from "@/lib/demo-data";
 
 export type StepType = "EMAIL" | "GESTURE" | "DELAY";
 
@@ -21,6 +23,10 @@ export interface CampaignStepData {
 }
 
 export async function getCampaignSteps(campaignId: string) {
+  if (await isDemoMode()) {
+    return [];
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return [];
@@ -51,6 +57,20 @@ export async function createCampaignStep(
   campaignId: string,
   data: CampaignStepData
 ) {
+  if (await isDemoMode()) {
+    const mockStep = {
+      id: `demo-step-${Date.now()}`,
+      campaignId,
+      ...data,
+      gesture: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    revalidatePath(`/campaigns/${campaignId}`);
+    revalidatePath(`/campaigns/${campaignId}/edit`);
+    return mockStep;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -87,6 +107,19 @@ export async function updateCampaignStep(
   stepId: string,
   data: Partial<CampaignStepData>
 ) {
+  if (await isDemoMode()) {
+    const mockStep = {
+      id: stepId,
+      campaignId: "demo-campaign",
+      ...data,
+      gesture: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    revalidatePath("/campaigns");
+    return mockStep;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -116,6 +149,11 @@ export async function updateCampaignStep(
 }
 
 export async function deleteCampaignStep(stepId: string) {
+  if (await isDemoMode()) {
+    revalidatePath("/campaigns");
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -156,6 +194,12 @@ export async function reorderCampaignSteps(
   campaignId: string,
   stepIds: string[]
 ) {
+  if (await isDemoMode()) {
+    revalidatePath(`/campaigns/${campaignId}`);
+    revalidatePath(`/campaigns/${campaignId}/edit`);
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -187,6 +231,37 @@ export async function reorderCampaignSteps(
 
 // Get a campaign with its steps for the builder
 export async function getCampaignWithSteps(campaignId: string) {
+  if (await isDemoMode()) {
+    // Check if this is a demo campaign (existing or newly created)
+    const demoCampaign = demoCampaigns.find((c) => c.id === campaignId);
+
+    // For newly created demo campaigns (id starts with "demo-campaign-"), return a shell
+    const name = demoCampaign?.name || "New Campaign";
+    const description = demoCampaign?.description || null;
+
+    return {
+      id: campaignId,
+      name,
+      description,
+      subject: null,
+      content: null,
+      status: "DRAFT",
+      type: "SEQUENCE",
+      budgetAmount: 0,
+      budgetSpent: 0,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      organizationId: "demo-org-id",
+      createdById: "demo-user-id",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      steps: [],
+      recipients: [],
+      createdBy: { id: "demo-user-id", name: "Demo User", email: "demo@example.com" },
+      stats: null,
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

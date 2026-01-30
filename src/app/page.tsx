@@ -90,10 +90,9 @@ export default async function HomePage() {
             Add high-touch gifting and personalized experiences on top of your existing CRM.
           </p>
 
-          {/* Conditional Content based on auth state */}
           {isLoggedIn ? (
             <>
-              {/* User Greeting - shown when logged in */}
+              {/* Greeting for signed-in users */}
               <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border mb-8">
                 <p className="text-lg text-foreground">
                   Hello,{" "}
@@ -106,8 +105,7 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              {/* CTA Buttons for logged in users */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex justify-center">
                 <Link href="/dashboard">
                   <Button
                     size="lg"
@@ -115,16 +113,6 @@ export default async function HomePage() {
                   >
                     <Rocket className="mr-2 h-5 w-5" />
                     Go to Dashboard
-                  </Button>
-                </Link>
-                <Link href="/sends">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="text-lg px-8 py-6"
-                  >
-                    <Send className="mr-2 h-5 w-5" />
-                    View Sends
                   </Button>
                 </Link>
               </div>
@@ -141,7 +129,6 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              {/* CTA Buttons for non-logged in users */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/login">
                   <Button

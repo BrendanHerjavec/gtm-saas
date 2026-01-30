@@ -88,7 +88,7 @@ export default async function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {summary?.remaining !== null
+              {summary?.remaining != null
                 ? formatCurrency(summary.remaining)
                 : "-"}
             </div>
@@ -102,7 +102,7 @@ export default async function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {summary?.percentUsed !== null
+              {summary?.percentUsed != null
                 ? `${Math.round(summary.percentUsed)}%`
                 : "-"}
             </div>

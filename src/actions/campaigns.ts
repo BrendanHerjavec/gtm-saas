@@ -114,17 +114,32 @@ export async function getCampaign(id: string) {
   // Handle demo mode
   if (await isDemoMode()) {
     const campaign = demoCampaigns.find(c => c.id === id);
-    if (!campaign) {
-      throw new Error("Campaign not found");
-    }
 
-    const campaignSends = demoSends.filter(s => s.campaignId === campaign.id);
+    // Support both known demo campaigns and newly created demo campaigns
+    const name = campaign?.name || "New Campaign";
+    const now = new Date();
+
+    const campaignSends = campaign ? demoSends.filter(s => s.campaignId === campaign.id) : [];
     return {
-      ...campaign,
+      id,
+      name,
+      description: campaign?.description || null,
+      subject: campaign?.subject || null,
+      content: campaign?.content || null,
+      status: campaign?.status || "DRAFT",
+      type: campaign?.type || "SEQUENCE",
+      budgetAmount: campaign?.budgetAmount || 0,
+      budgetSpent: campaign?.budgetSpent || 0,
+      startDate: campaign?.startDate || now,
+      endDate: campaign?.endDate || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+      organizationId: "demo-org-id",
+      createdById: DEMO_USER_ID,
+      createdAt: campaign?.createdAt || now,
+      updatedAt: campaign?.updatedAt || now,
       createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com", image: null },
       stats: {
-        id: `stats-${campaign.id}`,
-        campaignId: campaign.id,
+        id: `stats-${id}`,
+        campaignId: id,
         totalSends: campaignSends.length,
         pending: campaignSends.filter(s => s.status === "PENDING" || s.status === "PROCESSING").length,
         processing: 0,
@@ -132,8 +147,8 @@ export async function getCampaign(id: string) {
         delivered: campaignSends.filter(s => s.status === "DELIVERED").length,
         failed: campaignSends.filter(s => s.status === "FAILED").length,
         totalSpent: campaignSends.reduce((sum, s) => sum + s.totalCost, 0),
-        createdAt: campaign.createdAt,
-        updatedAt: campaign.updatedAt,
+        createdAt: campaign?.createdAt || now,
+        updatedAt: campaign?.updatedAt || now,
       },
     };
   }
