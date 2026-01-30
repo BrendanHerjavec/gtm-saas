@@ -348,7 +348,15 @@ export async function getTaskDeckStats() {
 
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
-    return null;
+    return {
+      total: 0,
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+      skipped: 0,
+      actionable: 0,
+      byType: { GIFT: 0, HANDWRITTEN_NOTE: 0, VIDEO: 0, EXPERIENCE: 0, DIRECT_MAIL: 0 },
+    };
   }
 
   const orgWhere = { organizationId: session.user.organizationId };
