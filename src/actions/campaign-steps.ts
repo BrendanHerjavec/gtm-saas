@@ -189,17 +189,21 @@ export async function deleteCampaignStep(stepId: string) {
     where: { id: stepId },
   });
 
-  // Reorder remaining steps
+  // Reorder remaining steps in a single transaction
   const remainingSteps = await prisma.campaignStep.findMany({
     where: { campaignId: step.campaignId },
     orderBy: { stepOrder: "asc" },
   });
 
-  for (let i = 0; i < remainingSteps.length; i++) {
-    await prisma.campaignStep.update({
-      where: { id: remainingSteps[i].id },
-      data: { stepOrder: i + 1 },
-    });
+  if (remainingSteps.length > 0) {
+    await prisma.$transaction(
+      remainingSteps.map((s, i) =>
+        prisma.campaignStep.update({
+          where: { id: s.id },
+          data: { stepOrder: i + 1 },
+        })
+      )
+    );
   }
 
   revalidatePath(`/campaigns/${step.campaignId}`);
@@ -233,13 +237,15 @@ export async function reorderCampaignSteps(
     throw new Error("Campaign not found");
   }
 
-  // Update order for each step
-  for (let i = 0; i < stepIds.length; i++) {
-    await prisma.campaignStep.update({
-      where: { id: stepIds[i] },
-      data: { stepOrder: i + 1 },
-    });
-  }
+  // Update order for all steps in a single transaction
+  await prisma.$transaction(
+    stepIds.map((id, i) =>
+      prisma.campaignStep.update({
+        where: { id },
+        data: { stepOrder: i + 1 },
+      })
+    )
+  );
 
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath(`/campaigns/${campaignId}/edit`);

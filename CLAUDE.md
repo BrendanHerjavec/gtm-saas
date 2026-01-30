@@ -12,9 +12,20 @@ npm run db:generate  # Generate Prisma client after schema changes
 npm run db:push      # Push schema changes to database (dev)
 npm run db:migrate   # Run Prisma migrations
 npm run db:studio    # Open Prisma Studio GUI
+npm test             # Run Vitest in watch mode
+npm run test:run     # Run all tests once (CI mode)
+npm run test:coverage # Run tests with coverage report
+npm run test:e2e     # Run Playwright E2E tests
+npm run test:e2e:ui  # Run Playwright E2E with interactive UI
 ```
 
-No test framework is configured. Tests should be added if the project grows.
+### Testing
+
+- **Unit tests:** Vitest with jsdom for server actions (`src/actions/__tests__/`) and components (`src/components/__tests__/`)
+- **E2E tests:** Playwright (`e2e/`) - runs against demo mode, no DB required
+- **Test mocks:** Shared mocks in `src/__tests__/mocks/` (prisma, auth, demo-mode, email)
+- **Factories:** `src/__tests__/factories.ts` for generating test data
+- **CI:** GitHub Actions workflow at `.github/workflows/test.yml`
 
 ## Architecture Overview
 

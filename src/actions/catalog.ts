@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { isDemoMode } from "@/lib/demo-mode";
 import { demoGiftItems, demoGiftCategories } from "@/lib/demo-data";
+import { createGiftItemSchema, updateGiftItemSchema, createCategorySchema, validateInput } from "@/lib/validations";
 
 export type GiftItemType = "all" | "PHYSICAL" | "DIGITAL" | "EXPERIENCE";
 
@@ -167,6 +168,12 @@ export interface CreateGiftItemInput {
 }
 
 export async function createGiftItem(input: CreateGiftItemInput) {
+  // Validate input
+  const validation = validateInput(createGiftItemSchema, input);
+  if (!validation.success) {
+    throw new Error(`Validation failed: ${Object.values(validation.errors).join(', ')}`);
+  }
+
   // Handle demo mode - simulate creation without database
   if (await isDemoMode()) {
     const mockItem = {
@@ -200,6 +207,12 @@ export async function createGiftItem(input: CreateGiftItemInput) {
 }
 
 export async function updateGiftItem(id: string, input: Partial<CreateGiftItemInput> & { inStock?: boolean; isActive?: boolean }) {
+  // Validate input
+  const validation = validateInput(updateGiftItemSchema, input);
+  if (!validation.success) {
+    throw new Error(`Validation failed: ${Object.values(validation.errors).join(', ')}`);
+  }
+
   // Handle demo mode - simulate update without database
   if (await isDemoMode()) {
     const existingItem = demoGiftItems.find(i => i.id === id);
@@ -275,6 +288,12 @@ export async function getCategories() {
 }
 
 export async function createCategory(input: { name: string; description?: string; icon?: string; color?: string }) {
+  // Validate input
+  const validation = validateInput(createCategorySchema, input);
+  if (!validation.success) {
+    throw new Error(`Validation failed: ${Object.values(validation.errors).join(', ')}`);
+  }
+
   // Handle demo mode - simulate creation without database
   if (await isDemoMode()) {
     const mockCategory = {

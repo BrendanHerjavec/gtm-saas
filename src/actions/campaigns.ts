@@ -5,6 +5,7 @@ import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo-mode";
 import { demoCampaigns, demoSends, DEMO_USER_ID } from "@/lib/demo-data";
+import { z } from "zod";
 
 export type CampaignStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "COMPLETED" | "CANCELLED";
 export type CampaignType = "MANUAL" | "TRIGGERED" | "SCHEDULED";
@@ -177,12 +178,26 @@ export async function getCampaign(id: string) {
   return campaign;
 }
 
+const createCampaignSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  description: z.string().max(2000).optional(),
+  content: z.string().max(2000).optional(),
+  type: z.enum(["MANUAL", "TRIGGERED", "SCHEDULED"]).optional(),
+});
+
 export async function createCampaign(data: {
   name: string;
   description?: string;
   content?: string; // legacy alias for description
   type?: CampaignType;
 }) {
+  // Validate input
+  const validation = createCampaignSchema.safeParse(data);
+  if (!validation.success) {
+    const errors = validation.error.errors.map(e => e.message).join(', ');
+    throw new Error(`Validation failed: ${errors}`);
+  }
+
   // Map 'content' to 'description' for backward compatibility
   const description = data.description || data.content || null;
 

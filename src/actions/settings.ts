@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { isDemoMode } from "@/lib/demo-mode";
+import { sendEmail } from "@/lib/email";
 
 // ============================================
 // Profile Settings
@@ -261,8 +262,33 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     },
   });
 
-  // TODO: Send invitation email when email service is configured
-  // await sendInvitationEmail(input.email, session.user.organizationId);
+  const org = await prisma.organization.findUnique({
+    where: { id: session.user.organizationId },
+    select: { name: true },
+  });
+
+  await sendEmail({
+    to: input.email,
+    subject: `You've been invited to ${org?.name || "a team"} on Moments`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"><title>Team Invitation</title></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #333;">You're Invited!</h1>
+          <p style="color: #666; line-height: 1.6;">
+            You've been invited to join <strong>${org?.name || "a team"}</strong> on Moments as a ${input.role.toLowerCase()}.
+          </p>
+          <a href="${process.env.NEXTAUTH_URL || "http://localhost:3000"}/login" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
+            Get Started
+          </a>
+          <p style="color: #999; font-size: 14px;">
+            Sign in with this email address to access your account.
+          </p>
+        </body>
+      </html>
+    `,
+  });
 
   revalidatePath("/settings");
   return { success: true, message: `Invitation sent to ${input.email}` };

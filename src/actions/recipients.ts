@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { isDemoMode } from "@/lib/demo-mode";
 import { demoRecipients, DEMO_ORG_ID } from "@/lib/demo-data";
+import { createRecipientSchema, updateRecipientSchema, validateInput } from "@/lib/validations";
 
 export type RecipientStatus = "all" | "active" | "do_not_send";
 
@@ -138,6 +139,12 @@ export interface CreateRecipientInput {
 }
 
 export async function createRecipient(input: CreateRecipientInput) {
+  // Validate input
+  const validation = validateInput(createRecipientSchema, input);
+  if (!validation.success) {
+    throw new Error(`Validation failed: ${Object.values(validation.errors).join(', ')}`);
+  }
+
   // Handle demo mode - simulate creation without database
   if (await isDemoMode()) {
     const mockRecipient = {
@@ -170,6 +177,12 @@ export async function createRecipient(input: CreateRecipientInput) {
 }
 
 export async function updateRecipient(id: string, input: Partial<CreateRecipientInput> & { doNotSend?: boolean }) {
+  // Validate input
+  const validation = validateInput(updateRecipientSchema, input);
+  if (!validation.success) {
+    throw new Error(`Validation failed: ${Object.values(validation.errors).join(', ')}`);
+  }
+
   // Handle demo mode - simulate update without database
   if (await isDemoMode()) {
     const existingRecipient = demoRecipients.find(r => r.id === id);

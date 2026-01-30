@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { isDemoMode } from "@/lib/demo-mode";
 import { demoBudgets, demoSends } from "@/lib/demo-data";
+import { z, ZodError } from "zod";
 
 export interface GetBudgetsParams {
   type?: string;
@@ -98,6 +99,19 @@ export async function getActiveBudget() {
   });
 }
 
+const createBudgetInputSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  type: z.string().min(1, "Type is required"),
+  amount: z.number().min(0, "Amount must be positive"),
+  currency: z.string().length(3).optional(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  alertThreshold: z.number().min(0).max(100).optional(),
+}).refine(
+  (data) => data.endDate >= data.startDate,
+  { message: "End date must be after start date", path: ["endDate"] }
+);
+
 export interface CreateBudgetInput {
   name: string;
   type: string;
@@ -109,6 +123,13 @@ export interface CreateBudgetInput {
 }
 
 export async function createBudget(input: CreateBudgetInput) {
+  // Validate input
+  const result = createBudgetInputSchema.safeParse(input);
+  if (!result.success) {
+    const errors = result.error.errors.map(e => e.message).join(', ');
+    throw new Error(`Validation failed: ${errors}`);
+  }
+
   // Handle demo mode - simulate creation without database
   if (await isDemoMode()) {
     const mockBudget = {

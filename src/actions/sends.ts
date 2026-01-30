@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { isDemoMode } from "@/lib/demo-mode";
 import { demoSends, demoRecipients, demoGiftItems, demoCampaigns, DEMO_USER_ID } from "@/lib/demo-data";
+import { createSendSchema, updateSendSchema, validateInput } from "@/lib/validations";
 
 export type SendStatus = "all" | "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "FAILED" | "CANCELLED";
 export type SendType = "all" | "GIFT" | "HANDWRITTEN_NOTE" | "VIDEO" | "EXPERIENCE" | "DIRECT_MAIL";
@@ -166,6 +167,12 @@ export interface CreateSendInput {
 }
 
 export async function createSend(input: CreateSendInput) {
+  // Validate input
+  const validation = validateInput(createSendSchema, input);
+  if (!validation.success) {
+    throw new Error(`Validation failed: ${Object.values(validation.errors).join(', ')}`);
+  }
+
   // Handle demo mode - simulate creation without database
   if (await isDemoMode()) {
     const giftItem = input.giftItemId

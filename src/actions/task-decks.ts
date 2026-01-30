@@ -1111,159 +1111,172 @@ export async function getLeaderboard(period: "week" | "month" | "all" = "week") 
   // Task types for grouping
   const taskTypes = ["VIDEO", "HANDWRITTEN_NOTE", "GIFT", "EXPERIENCE", "DIRECT_MAIL"] as const;
 
-  // Get completion stats for each user
-  type UserEntry = { id: string; name: string | null; email: string | null; image: string | null };
-  const userStats = await Promise.all(
-    users.map(async (user: UserEntry) => {
-      const whereClause: Record<string, unknown> = {
-        completedById: user.id,
+  const userIds = users.map((u) => u.id);
+
+  // Batch query 1: Get completed & skipped counts per user (replaces 2 queries per user)
+  const statusCounts = await prisma.outreachTask.groupBy({
+    by: ["completedById", "status"],
+    where: {
+      completedById: { in: userIds },
+      status: { in: ["COMPLETED", "SKIPPED"] },
+      ...(startDate && { completedAt: { gte: startDate } }),
+    },
+    _count: true,
+  });
+
+  // Batch query 2: Get previous period counts per user (replaces 1 query per user)
+  let previousCounts: { completedById: string | null; _count: number }[] = [];
+  if (previousStartDate && previousEndDate) {
+    previousCounts = await prisma.outreachTask.groupBy({
+      by: ["completedById"],
+      where: {
+        completedById: { in: userIds },
         status: "COMPLETED",
-      };
+        completedAt: { gte: previousStartDate, lt: previousEndDate },
+      },
+      _count: true,
+    });
+  }
 
-      if (startDate) {
-        whereClause.completedAt = { gte: startDate };
-      }
+  // Batch query 3: Get task type breakdown per user (replaces 1 query per user)
+  const taskTypeBreakdown = await prisma.outreachTask.groupBy({
+    by: ["completedById", "taskType"],
+    where: {
+      completedById: { in: userIds },
+      status: "COMPLETED",
+      ...(startDate && { completedAt: { gte: startDate } }),
+    },
+    _count: true,
+  });
 
-      // Get completed and skipped counts
-      const [completed, skipped] = await Promise.all([
-        prisma.outreachTask.count({
-          where: whereClause,
-        }),
-        prisma.outreachTask.count({
-          where: {
-            completedById: user.id,
-            status: "SKIPPED",
-            ...(startDate && { completedAt: { gte: startDate } }),
-          },
-        }),
-      ]);
+  // Batch query 4: Get recent completions for streak calculation (replaces 1 query per user)
+  const recentCompletions = await prisma.outreachTask.findMany({
+    where: {
+      completedById: { in: userIds },
+      status: "COMPLETED",
+      completedAt: { not: null },
+    },
+    orderBy: { completedAt: "desc" },
+    select: { completedById: true, completedAt: true },
+  });
 
-      // Get previous period stats for trend calculation
-      let previousCompleted = 0;
-      if (previousStartDate && previousEndDate) {
-        previousCompleted = await prisma.outreachTask.count({
-          where: {
-            completedById: user.id,
-            status: "COMPLETED",
-            completedAt: { gte: previousStartDate, lt: previousEndDate },
-          },
-        });
-      }
+  // Build lookup maps from batch results
+  const completedMap = new Map<string, number>();
+  const skippedMap = new Map<string, number>();
+  for (const row of statusCounts) {
+    if (!row.completedById) continue;
+    if (row.status === "COMPLETED") completedMap.set(row.completedById, row._count);
+    if (row.status === "SKIPPED") skippedMap.set(row.completedById, row._count);
+  }
 
-      // Get tasks by type
-      const tasksByTypeResults = await prisma.outreachTask.groupBy({
-        by: ["taskType"],
-        where: {
-          completedById: user.id,
-          status: "COMPLETED",
-          ...(startDate && { completedAt: { gte: startDate } }),
-        },
-        _count: true,
-      });
+  const previousMap = new Map<string, number>();
+  for (const row of previousCounts) {
+    if (row.completedById) previousMap.set(row.completedById, row._count);
+  }
 
-      const tasksByType = {
-        VIDEO: 0,
-        HANDWRITTEN_NOTE: 0,
-        GIFT: 0,
-        EXPERIENCE: 0,
-        DIRECT_MAIL: 0,
-      };
-      for (const result of tasksByTypeResults) {
-        if (result.taskType in tasksByType) {
-          tasksByType[result.taskType as keyof typeof tasksByType] = result._count;
-        }
-      }
+  const tasksByTypeMap = new Map<string, Record<string, number>>();
+  for (const row of taskTypeBreakdown) {
+    if (!row.completedById) continue;
+    if (!tasksByTypeMap.has(row.completedById)) {
+      tasksByTypeMap.set(row.completedById, { VIDEO: 0, HANDWRITTEN_NOTE: 0, GIFT: 0, EXPERIENCE: 0, DIRECT_MAIL: 0 });
+    }
+    const map = tasksByTypeMap.get(row.completedById)!;
+    if (row.taskType in map) {
+      map[row.taskType] = row._count;
+    }
+  }
 
-      // Calculate streak (consecutive days with completions)
-      const recentCompletions = await prisma.outreachTask.findMany({
-        where: {
-          completedById: user.id,
-          status: "COMPLETED",
-          completedAt: { not: null },
-        },
-        orderBy: { completedAt: "desc" },
-        take: 60, // Look at more days for best streak
-        select: { completedAt: true },
-      });
+  // Group recent completions by user for streak calculation
+  const completionsByUser = new Map<string, Date[]>();
+  for (const row of recentCompletions) {
+    if (!row.completedById || !row.completedAt) continue;
+    if (!completionsByUser.has(row.completedById)) {
+      completionsByUser.set(row.completedById, []);
+    }
+    completionsByUser.get(row.completedById)!.push(row.completedAt);
+  }
 
-      let streak = 0;
-      let bestStreak = 0;
-      let currentStreak = 0;
+  // Build user stats from lookup maps (no additional queries)
+  type UserEntry = { id: string; name: string | null; email: string | null; image: string | null };
+  const userStats = users.map((user: UserEntry) => {
+    const completed = completedMap.get(user.id) || 0;
+    const skipped = skippedMap.get(user.id) || 0;
+    const previousCompleted = previousMap.get(user.id) || 0;
+    const tasksByType = tasksByTypeMap.get(user.id) || {
+      VIDEO: 0, HANDWRITTEN_NOTE: 0, GIFT: 0, EXPERIENCE: 0, DIRECT_MAIL: 0,
+    };
 
-      if (recentCompletions.length > 0) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+    // Calculate streak from pre-fetched completions
+    const userCompletions = completionsByUser.get(user.id) || [];
+    let streak = 0;
+    let bestStreak = 0;
+    let currentStreak = 0;
 
-        let checkDate = new Date(today);
-        let lastDate: Date | null = null;
+    if (userCompletions.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-        for (const completion of recentCompletions) {
-          if (!completion.completedAt) continue;
+      let checkDate = new Date(today);
+      let lastDate: Date | null = null;
 
-          const completionDate = new Date(completion.completedAt);
-          completionDate.setHours(0, 0, 0, 0);
+      // Only look at first 60 completions for streak
+      const limited = userCompletions.slice(0, 60);
+      for (const completedAt of limited) {
+        const completionDate = new Date(completedAt);
+        completionDate.setHours(0, 0, 0, 0);
 
-          // Current streak calculation
-          if (streak === currentStreak) {
-            if (completionDate.getTime() === checkDate.getTime()) {
-              streak++;
-              currentStreak++;
-              checkDate.setDate(checkDate.getDate() - 1);
-            } else if (completionDate.getTime() < checkDate.getTime()) {
-              // Streak broken, but continue for best streak
-            }
+        if (streak === currentStreak) {
+          if (completionDate.getTime() === checkDate.getTime()) {
+            streak++;
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
           }
+        }
 
-          // Best streak calculation
-          if (lastDate === null) {
+        if (lastDate === null) {
+          currentStreak = 1;
+        } else {
+          const diffDays = Math.round((lastDate.getTime() - completionDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            currentStreak++;
+          } else if (diffDays > 1) {
+            bestStreak = Math.max(bestStreak, currentStreak);
             currentStreak = 1;
-          } else {
-            const diffDays = Math.round((lastDate.getTime() - completionDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffDays === 1) {
-              currentStreak++;
-            } else if (diffDays > 1) {
-              bestStreak = Math.max(bestStreak, currentStreak);
-              currentStreak = 1;
-            }
           }
-          lastDate = completionDate;
         }
-        bestStreak = Math.max(bestStreak, currentStreak, streak);
+        lastDate = completionDate;
       }
+      bestStreak = Math.max(bestStreak, currentStreak, streak);
+    }
 
-      // Calculate completion rate
-      const totalAttempted = completed + skipped;
-      const completionRate = totalAttempted > 0 ? Math.round((completed / totalAttempted) * 100) : 0;
+    const totalAttempted = completed + skipped;
+    const completionRate = totalAttempted > 0 ? Math.round((completed / totalAttempted) * 100) : 0;
+    const avgPerDay = Math.round((completed / periodDays) * 10) / 10;
 
-      // Calculate average per day
-      const avgPerDay = Math.round((completed / periodDays) * 10) / 10;
+    let trend: "up" | "down" | "same" = "same";
+    if (previousCompleted > 0 || completed > 0) {
+      if (completed > previousCompleted) trend = "up";
+      else if (completed < previousCompleted) trend = "down";
+    }
 
-      // Determine trend
-      let trend: "up" | "down" | "same" = "same";
-      if (previousCompleted > 0 || completed > 0) {
-        if (completed > previousCompleted) trend = "up";
-        else if (completed < previousCompleted) trend = "down";
-      }
-
-      return {
-        userId: user.id,
-        name: user.name || "Unknown",
-        email: user.email || "",
-        image: user.image,
-        completedTasks: completed,
-        skippedTasks: skipped,
-        totalCompleted: completed,
-        streak,
-        bestStreak,
-        completionRate,
-        avgPerDay,
-        tasksByType,
-        trend,
-        previousCompleted,
-        isCurrentUser: user.id === session.user.id,
-      };
-    })
-  );
+    return {
+      userId: user.id,
+      name: user.name || "Unknown",
+      email: user.email || "",
+      image: user.image,
+      completedTasks: completed,
+      skippedTasks: skipped,
+      totalCompleted: completed,
+      streak,
+      bestStreak,
+      completionRate,
+      avgPerDay,
+      tasksByType,
+      trend,
+      previousCompleted,
+      isCurrentUser: user.id === session.user.id,
+    };
+  });
 
   // Sort by completed tasks (descending) and assign ranks
   const sortedStats = userStats
