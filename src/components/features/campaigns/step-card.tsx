@@ -1,13 +1,11 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Mail,
   Gift,
   Clock,
-  GripVertical,
   Trash2,
   Edit2,
   TreePine,
@@ -69,12 +67,52 @@ export interface CampaignStep {
 
 interface StepCardProps {
   step: CampaignStep;
+  stepNumber: number;
   onEdit?: (step: CampaignStep) => void;
   onDelete?: (stepId: string) => void;
   isDragging?: boolean;
+  isLast?: boolean;
+  animationDelay?: number;
 }
 
-export function StepCard({ step, onEdit, onDelete, isDragging }: StepCardProps) {
+const stepConfig = {
+  EMAIL: {
+    gradient: "from-blue-400 to-blue-600",
+    bgLight: "bg-blue-50",
+    textColor: "text-blue-600",
+    borderColor: "border-blue-200",
+    nodeRing: "ring-blue-200 bg-blue-500",
+    label: "Email",
+  },
+  GESTURE: {
+    gradient: "from-emerald-400 to-emerald-600",
+    bgLight: "bg-emerald-50",
+    textColor: "text-emerald-600",
+    borderColor: "border-emerald-200",
+    nodeRing: "ring-emerald-200 bg-emerald-500",
+    label: "Gesture",
+  },
+  DELAY: {
+    gradient: "from-gray-300 to-gray-500",
+    bgLight: "bg-gray-50",
+    textColor: "text-gray-500",
+    borderColor: "border-gray-200",
+    nodeRing: "ring-gray-200 bg-gray-400",
+    label: "Delay",
+  },
+} as const;
+
+export function StepCard({
+  step,
+  stepNumber,
+  onEdit,
+  onDelete,
+  isDragging,
+  isLast,
+  animationDelay = 0,
+}: StepCardProps) {
+  const config = stepConfig[step.stepType as keyof typeof stepConfig] || stepConfig.DELAY;
+
   const getStepIcon = () => {
     switch (step.stepType) {
       case "EMAIL":
@@ -129,82 +167,94 @@ export function StepCard({ step, onEdit, onDelete, isDragging }: StepCardProps) 
     }
   };
 
-  const getStepColor = () => {
-    switch (step.stepType) {
-      case "EMAIL":
-        return "bg-blue-500/10 text-blue-600";
-      case "GESTURE":
-        return "bg-primary/10 text-primary";
-      case "DELAY":
-        return "bg-gray-500/10 text-gray-600";
-      default:
-        return "bg-gray-500/10 text-gray-600";
-    }
-  };
-
-  const getBadgeVariant = () => {
-    switch (step.stepType) {
-      case "EMAIL":
-        return "default";
-      case "GESTURE":
-        return "secondary";
-      case "DELAY":
-        return "outline";
-      default:
-        return "outline";
-    }
-  };
-
   return (
-    <Card
-      className={`transition-all ${isDragging ? "shadow-lg ring-2 ring-primary" : "hover:shadow-md"}`}
+    <div
+      className="flex gap-4 group"
+      style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="cursor-grab text-muted-foreground hover:text-foreground">
-            <GripVertical className="h-5 w-5" />
-          </div>
+      {/* Timeline node */}
+      <div className="flex flex-col items-center flex-shrink-0">
+        {/* Step number circle */}
+        <div
+          className={`
+            w-10 h-10 rounded-full flex items-center justify-center
+            text-white text-sm font-bold shadow-md
+            ring-4 ${config.nodeRing}
+            transition-all duration-300
+            group-hover:scale-110 group-hover:shadow-lg
+          `}
+        >
+          {stepNumber}
+        </div>
+        {/* Connecting line */}
+        {!isLast && (
+          <div className="w-0.5 flex-1 min-h-[24px] bg-gradient-to-b from-gray-300 to-gray-200 mt-2" />
+        )}
+      </div>
 
-          <div className={`rounded-lg p-2 ${getStepColor()}`}>
-            {getStepIcon()}
-          </div>
+      {/* Step card */}
+      <Card
+        className={`
+          flex-1 overflow-hidden transition-all duration-300 mb-3
+          ${isDragging ? "shadow-xl ring-2 ring-primary scale-[1.02]" : "hover:shadow-lg hover:-translate-y-0.5"}
+        `}
+      >
+        {/* Gradient top accent bar */}
+        <div className={`h-1 w-full bg-gradient-to-r ${config.gradient}`} />
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-medium truncate">{getStepTitle()}</h4>
-              <Badge variant={getBadgeVariant() as "default" | "secondary" | "outline"} className="text-xs">
-                {step.stepType}
-              </Badge>
+        <div className="p-4">
+          <div className="flex items-start gap-3">
+            {/* Icon */}
+            <div
+              className={`
+                rounded-xl p-2.5 ${config.bgLight} ${config.textColor}
+                transition-transform duration-300 group-hover:scale-105
+              `}
+            >
+              {getStepIcon()}
             </div>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {getStepDescription()}
-            </p>
-          </div>
 
-          <div className="flex items-center gap-1">
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(step)}
-                className="h-8 w-8"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(step.id)}
-                className="h-8 w-8 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className={`text-xs font-semibold uppercase tracking-wider ${config.textColor}`}>
+                  {config.label}
+                </span>
+              </div>
+              <h4 className="font-semibold text-foreground truncate">
+                {getStepTitle()}
+              </h4>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                {getStepDescription()}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(step)}
+                  className="h-8 w-8 hover:bg-accent"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(step.id)}
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

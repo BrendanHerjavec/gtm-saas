@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowDown, Loader2 } from "lucide-react";
+import { Loader2, Workflow } from "lucide-react";
 import { StepCard, type CampaignStep, type StepType } from "./step-card";
 import { AddStepButton } from "./add-step-button";
 import { StepEditorDialog } from "./step-editor-dialog";
@@ -106,35 +105,56 @@ export function CampaignBuilder({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Campaign Flow</CardTitle>
+          <div className="flex items-center gap-2">
+            <Workflow className="h-5 w-5 text-primary" />
+            <CardTitle>Campaign Flow</CardTitle>
+          </div>
+          {steps.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {steps.length} step{steps.length !== 1 ? "s" : ""} in this campaign
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {steps.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                No steps yet. Add your first step to build the campaign flow.
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary mb-4">
+                <Workflow className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Build your campaign flow</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                Add steps to create a personalized outreach sequence. Combine emails, gestures, and delays.
               </p>
               <AddStepButton onAddStep={handleAddStep} />
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="pl-1">
+              {/* Timeline */}
               {steps.map((step, index) => (
-                <div key={step.id}>
-                  <StepCard
-                    step={step}
-                    onEdit={handleEditStep}
-                    onDelete={handleDeleteStep}
-                    isDragging={deletingId === step.id}
-                  />
-                  {index < steps.length - 1 && (
-                    <div className="flex justify-center py-2">
-                      <ArrowDown className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
+                <StepCard
+                  key={step.id}
+                  step={step}
+                  stepNumber={index + 1}
+                  onEdit={handleEditStep}
+                  onDelete={handleDeleteStep}
+                  isDragging={deletingId === step.id}
+                  isLast={false}
+                  animationDelay={index * 100}
+                />
               ))}
-              <div className="pt-4">
-                <AddStepButton onAddStep={handleAddStep} />
+
+              {/* Add step node at end of timeline */}
+              <div className="flex gap-4">
+                {/* Plus node on timeline */}
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 bg-background text-muted-foreground hover:border-primary hover:text-primary transition-colors duration-200">
+                    <span className="text-lg font-light">+</span>
+                  </div>
+                </div>
+                {/* Add step button */}
+                <div className="flex-1 pb-2">
+                  <AddStepButton onAddStep={handleAddStep} />
+                </div>
               </div>
             </div>
           )}
