@@ -648,6 +648,69 @@ export async function getUnassignedTasks() {
 }
 
 /**
+ * Get unassigned tasks due within the next X days
+ */
+export async function getTasksDueSoon(days: number) {
+  // Demo mode: return filtered demo tasks
+  if (await isDemoMode()) {
+    const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() + days);
+    const filtered = demoOutreachTasks
+      .filter(
+        (t) =>
+          !t.deckId &&
+          (t.status === "PENDING" || t.status === "IN_PROGRESS") &&
+          t.dueDate &&
+          new Date(t.dueDate) <= cutoff
+      )
+      .map((task) => ({
+        ...task,
+        recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+      }));
+    return { tasks: filtered, total: filtered.length };
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    return { tasks: [], total: 0 };
+  }
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() + days);
+
+  const where = {
+    organizationId: session.user.organizationId,
+    deckId: null,
+    status: { in: ["PENDING", "IN_PROGRESS"] as string[] },
+    dueDate: { lte: cutoff },
+  };
+
+  const [tasks, total] = await Promise.all([
+    prisma.outreachTask.findMany({
+      where,
+      include: {
+        recipient: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            company: true,
+            jobTitle: true,
+          },
+        },
+      },
+      orderBy: [{ dueDate: "asc" }, { priority: "desc" }],
+      take: 100,
+    }),
+    prisma.outreachTask.count({ where }),
+  ]);
+
+  return { tasks, total };
+}
+
+/**
  * Delete a task deck (tasks are not deleted, just unassigned)
  */
 export async function deleteTaskDeck(id: string) {
