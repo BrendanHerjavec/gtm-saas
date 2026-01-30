@@ -179,17 +179,19 @@ export async function getCampaign(id: string) {
 
 export async function createCampaign(data: {
   name: string;
-  subject?: string;
-  content?: string;
+  description?: string;
+  content?: string; // legacy alias for description
   type?: CampaignType;
-  scheduledAt?: Date;
 }) {
+  // Map 'content' to 'description' for backward compatibility
+  const description = data.description || data.content || null;
+
   // Handle demo mode - simulate creation without database
   if (await isDemoMode()) {
     const mockCampaign = {
       id: `demo-campaign-${Date.now()}`,
-      ...data,
-      description: null,
+      name: data.name,
+      description,
       status: "DRAFT" as const,
       type: data.type || "MANUAL",
       budgetAmount: 0,
@@ -213,7 +215,9 @@ export async function createCampaign(data: {
 
   const campaign = await prisma.campaign.create({
     data: {
-      ...data,
+      name: data.name,
+      description,
+      type: data.type || "MANUAL",
       organizationId: session.user.organizationId,
       createdById: session.user.id,
     },
@@ -234,11 +238,12 @@ export async function updateCampaign(
   id: string,
   data: {
     name?: string;
-    subject?: string;
-    content?: string;
+    description?: string;
     status?: CampaignStatus;
     type?: CampaignType;
-    scheduledAt?: Date;
+    startDate?: Date;
+    endDate?: Date;
+    budgetAmount?: number;
   }
 ) {
   // Handle demo mode - simulate update without database
@@ -247,12 +252,6 @@ export async function updateCampaign(
     if (!existingCampaign) {
       throw new Error("Campaign not found");
     }
-
-    const mockUpdatedCampaign = {
-      ...existingCampaign,
-      ...data,
-      updatedAt: new Date(),
-    };
 
     revalidatePath("/campaigns");
     revalidatePath(`/campaigns/${id}`);
