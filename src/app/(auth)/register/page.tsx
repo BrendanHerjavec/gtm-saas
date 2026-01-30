@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Target, Loader2 } from "lucide-react";
+import { Leaf, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,11 +117,11 @@ export default function RegisterPage() {
     <Card>
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-center mb-4">
-          <Target className="h-10 w-10 text-primary" />
+          <Leaf className="h-10 w-10 text-primary" />
         </div>
         <CardTitle className="text-2xl text-center">Create an account</CardTitle>
         <CardDescription className="text-center">
-          Get started with your GTM platform
+          Get started with Juniply
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

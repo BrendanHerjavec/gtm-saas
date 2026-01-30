@@ -8,6 +8,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { RecipientsTable } from "@/components/features/recipients/recipients-table";
 import { UserCircle, Plus, Send, Ban } from "lucide-react";
 import Link from "next/link";
+import { CsvImportDialog } from "@/components/features/recipients/csv-import-dialog";
 
 const statusFilters = [
   { value: "active", label: "Active" },
@@ -40,12 +41,15 @@ export default async function RecipientsPage({
             People you send gifts and personal touches to, synced from your CRM
           </p>
         </div>
-        <Link href="/recipients/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Recipient
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <CsvImportDialog />
+          <Link href="/recipients/new">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Recipient
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

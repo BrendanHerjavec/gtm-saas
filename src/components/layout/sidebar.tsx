@@ -14,7 +14,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  Leaf,
   Gift,
   Plug,
   Layers,
@@ -90,13 +90,13 @@ export function Sidebar() {
       <div className="flex h-16 items-center justify-between border-b px-4">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <Sparkles className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Moments</span>
+            <Leaf className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">Juniply</span>
           </Link>
         )}
         {collapsed && (
           <Link href="/dashboard" className="mx-auto">
-            <Sparkles className="h-6 w-6 text-primary" />
+            <Leaf className="h-6 w-6 text-primary" />
           </Link>
         )}
       </div>

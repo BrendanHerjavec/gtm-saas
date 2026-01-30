@@ -39,27 +39,12 @@ export async function POST(request: Request) {
       },
     });
 
-    const defaultStages = [
-      { name: "Qualification", order: 1, probability: 10 },
-      { name: "Discovery", order: 2, probability: 25 },
-      { name: "Proposal", order: 3, probability: 50 },
-      { name: "Negotiation", order: 4, probability: 75 },
-      { name: "Closed Won", order: 5, probability: 100 },
-    ];
-
-    await prisma.dealStage.createMany({
-      data: defaultStages.map((stage) => ({
-        ...stage,
-        organizationId: organization.id,
-      })),
-    });
-
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: "OWNER",
+        role: "ADMIN",
         organizationId: organization.id,
       },
     });

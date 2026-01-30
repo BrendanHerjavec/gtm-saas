@@ -29,7 +29,7 @@ const providerConfig: Record<string, { name: string; icon: string; color: string
   hubspot: {
     name: "HubSpot",
     icon: "H",
-    color: "bg-green-800",
+    color: "bg-primary",
     url: "https://app.hubspot.com",
   },
   salesforce: {

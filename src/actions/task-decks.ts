@@ -131,18 +131,16 @@ export async function getTaskDeck(id: string) {
     // Import demo tasks and recipients for demo mode
     const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
 
-    // For demo, associate tasks with this deck based on deck index
-    const deckIndex = demoTaskDecks.findIndex((d) => d.id === id);
-    const tasksPerDeck = Math.ceil(demoOutreachTasks.length / demoTaskDecks.length);
-    const startIdx = deckIndex * tasksPerDeck;
-    const deckTasks = demoOutreachTasks.slice(startIdx, startIdx + deck.totalTasks).map((task) => ({
-      ...task,
-      deckId: id,
-      recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
-      assignedTo: task.assignedToId
-        ? { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" }
-        : null,
-    }));
+    // Get tasks that belong to this deck by deckId
+    const deckTasks = demoOutreachTasks
+      .filter((t) => t.deckId === id)
+      .map((task) => ({
+        ...task,
+        recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+        assignedTo: task.assignedToId
+          ? { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" }
+          : null,
+      }));
 
     return {
       ...deck,
@@ -201,6 +199,31 @@ export interface CreateTaskDeckInput {
  * Create a new task deck
  */
 export async function createTaskDeck(input: CreateTaskDeckInput) {
+  // Demo mode: return mock deck
+  if (await isDemoMode()) {
+    const mockDeck = {
+      id: `demo-deck-${Date.now()}`,
+      name: input.name,
+      description: input.description || null,
+      coverColor: input.coverColor || "#3B82F6",
+      emoji: input.emoji || "📦",
+      status: "SEALED",
+      openedAt: null,
+      completedAt: null,
+      totalTasks: input.taskIds?.length || 0,
+      completedTasks: 0,
+      skippedTasks: 0,
+      sourceType: "manual",
+      sourceId: null,
+      organizationId: DEMO_ORG_ID,
+      createdById: DEMO_USER_ID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    revalidatePath("/tasks");
+    return mockDeck;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId || !session?.user?.id) {
     throw new Error("Unauthorized");
@@ -249,6 +272,22 @@ export interface UpdateTaskDeckInput {
  * Update a task deck
  */
 export async function updateTaskDeck(id: string, input: UpdateTaskDeckInput) {
+  // Demo mode: return mock updated deck
+  if (await isDemoMode()) {
+    const deck = demoTaskDecks.find((d) => d.id === id);
+    if (!deck) throw new Error("Deck not found");
+    const updated = {
+      ...deck,
+      ...input,
+      ...(input.status === "OPENED" && { openedAt: new Date() }),
+      ...(input.status === "COMPLETED" && { completedAt: new Date() }),
+      updatedAt: new Date(),
+    };
+    revalidatePath("/tasks");
+    revalidatePath(`/tasks/decks/${id}`);
+    return updated;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -283,6 +322,15 @@ export async function updateTaskDeck(id: string, input: UpdateTaskDeckInput) {
  * Open a sealed deck (triggers animation state)
  */
 export async function openTaskDeck(id: string) {
+  // Demo mode: return mock opened deck without DB call
+  if (await isDemoMode()) {
+    const deck = demoTaskDecks.find((d) => d.id === id);
+    if (!deck) throw new Error("Deck not found");
+    revalidatePath("/tasks");
+    revalidatePath(`/tasks/decks/${id}`);
+    return { ...deck, status: "OPENED", openedAt: new Date() };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -320,6 +368,13 @@ export async function openTaskDeck(id: string) {
  * Add tasks to a deck
  */
 export async function addTasksToDeck(deckId: string, taskIds: string[]) {
+  // Demo mode: return mock success
+  if (await isDemoMode()) {
+    revalidatePath("/tasks");
+    revalidatePath(`/tasks/decks/${deckId}`);
+    return { success: true, count: taskIds.length };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -367,6 +422,13 @@ export async function addTasksToDeck(deckId: string, taskIds: string[]) {
  * Remove a task from a deck
  */
 export async function removeTaskFromDeck(deckId: string, taskId: string) {
+  // Demo mode: return mock success
+  if (await isDemoMode()) {
+    revalidatePath("/tasks");
+    revalidatePath(`/tasks/decks/${deckId}`);
+    return { success: true };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -406,6 +468,13 @@ export async function createDeckFromCampaign(
   deckName: string,
   taskType: "VIDEO" | "HANDWRITTEN_NOTE" | "GIFT" | "EXPERIENCE" | "DIRECT_MAIL" = "VIDEO"
 ) {
+  // Demo mode: return mock success
+  if (await isDemoMode()) {
+    revalidatePath("/tasks");
+    revalidatePath(`/campaigns/${campaignId}`);
+    return { success: true, deckId: `demo-deck-${Date.now()}`, count: 3 };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId || !session?.user?.id) {
     throw new Error("Unauthorized");
@@ -499,6 +568,18 @@ export async function createDeckFromCampaign(
  * Get tasks not assigned to any deck (unassigned tasks)
  */
 export async function getUnassignedTasks() {
+  // Demo mode: return tasks without a deckId
+  if (await isDemoMode()) {
+    const { demoOutreachTasks, demoRecipients } = await import("@/lib/demo-data");
+    const unassigned = demoOutreachTasks
+      .filter((t) => !t.deckId && (t.status === "PENDING" || t.status === "IN_PROGRESS"))
+      .map((task) => ({
+        ...task,
+        recipient: demoRecipients.find((r) => r.id === task.recipientId) || demoRecipients[0],
+      }));
+    return { tasks: unassigned, total: unassigned.length };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return { tasks: [], total: 0 };
@@ -542,6 +623,12 @@ export async function getUnassignedTasks() {
  * Delete a task deck (tasks are not deleted, just unassigned)
  */
 export async function deleteTaskDeck(id: string) {
+  // Demo mode: return mock success
+  if (await isDemoMode()) {
+    revalidatePath("/tasks");
+    return { success: true };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -574,6 +661,13 @@ export async function deleteTaskDeck(id: string) {
  * Update deck stats (called after task completion)
  */
 export async function updateDeckStats(deckId: string) {
+  // Demo mode: no-op, stats are static
+  if (await isDemoMode()) {
+    revalidatePath("/tasks");
+    revalidatePath(`/tasks/decks/${deckId}`);
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

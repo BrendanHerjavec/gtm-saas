@@ -111,6 +111,33 @@ export async function getCampaigns(params?: {
 }
 
 export async function getCampaign(id: string) {
+  // Handle demo mode
+  if (await isDemoMode()) {
+    const campaign = demoCampaigns.find(c => c.id === id);
+    if (!campaign) {
+      throw new Error("Campaign not found");
+    }
+
+    const campaignSends = demoSends.filter(s => s.campaignId === campaign.id);
+    return {
+      ...campaign,
+      createdBy: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com", image: null },
+      stats: {
+        id: `stats-${campaign.id}`,
+        campaignId: campaign.id,
+        totalSends: campaignSends.length,
+        pending: campaignSends.filter(s => s.status === "PENDING" || s.status === "PROCESSING").length,
+        processing: 0,
+        shipped: campaignSends.filter(s => s.status === "SHIPPED").length,
+        delivered: campaignSends.filter(s => s.status === "DELIVERED").length,
+        failed: campaignSends.filter(s => s.status === "FAILED").length,
+        totalSpent: campaignSends.reduce((sum, s) => sum + s.totalCost, 0),
+        createdAt: campaign.createdAt,
+        updatedAt: campaign.updatedAt,
+      },
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -143,6 +170,28 @@ export async function createCampaign(data: {
   type?: CampaignType;
   scheduledAt?: Date;
 }) {
+  // Handle demo mode - simulate creation without database
+  if (await isDemoMode()) {
+    const mockCampaign = {
+      id: `demo-campaign-${Date.now()}`,
+      ...data,
+      description: null,
+      status: "DRAFT" as const,
+      type: data.type || "MANUAL",
+      budgetAmount: 0,
+      budgetSpent: 0,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      organizationId: "demo-org-id",
+      createdById: DEMO_USER_ID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/campaigns");
+    return mockCampaign;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -178,6 +227,24 @@ export async function updateCampaign(
     scheduledAt?: Date;
   }
 ) {
+  // Handle demo mode - simulate update without database
+  if (await isDemoMode()) {
+    const existingCampaign = demoCampaigns.find(c => c.id === id);
+    if (!existingCampaign) {
+      throw new Error("Campaign not found");
+    }
+
+    const mockUpdatedCampaign = {
+      ...existingCampaign,
+      ...data,
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${id}`);
+    return { count: 1 };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -197,6 +264,12 @@ export async function updateCampaign(
 }
 
 export async function deleteCampaign(id: string) {
+  // Handle demo mode - simulate delete without database
+  if (await isDemoMode()) {
+    revalidatePath("/campaigns");
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

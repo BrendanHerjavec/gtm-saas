@@ -14,7 +14,7 @@ const crmProviders = [
     name: "HubSpot",
     description: "Sync contacts, companies, and deals from HubSpot CRM",
     icon: "H",
-    color: "bg-green-800",
+    color: "bg-primary",
     popular: true,
   },
   {

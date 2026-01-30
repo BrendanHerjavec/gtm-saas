@@ -12,7 +12,7 @@ import {
   Video,
   Mail,
   Calendar,
-  Sparkles,
+  Leaf,
   TreePine,
   Heart,
   Coffee,
@@ -88,7 +88,7 @@ export function Hero() {
       {/* Animated gradient background */}
       <div className="absolute inset-0 -z-10">
         {/* Primary gradient blobs */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-emerald-200/40 to-green-300/30 rounded-full blur-3xl animate-blob" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-primary/15 to-primary/10 rounded-full blur-3xl animate-blob" />
         <div
           className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-gradient-to-br from-blue-200/30 to-cyan-200/20 rounded-full blur-3xl animate-blob"
           style={{ animationDelay: "-5s" }}
@@ -166,7 +166,7 @@ export function Hero() {
               variant="outline"
               className="px-4 py-1.5 text-sm font-medium border-primary/30 bg-primary/5"
             >
-              <Sparkles className="h-3.5 w-3.5 mr-2 text-primary animate-pulse" />
+              <Leaf className="h-3.5 w-3.5 mr-2 text-primary animate-pulse" />
               The Gifting Layer for Your CRM
               <Star className="h-3.5 w-3.5 ml-2 text-yellow-500 animate-wiggle" />
             </Badge>
@@ -182,7 +182,7 @@ export function Hero() {
           >
             <span className="block">Gifts and touches</span>
             <span className="relative inline-block mt-2">
-              <span className="bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
+              <span className="bg-primary bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
                 {typedText}
               </span>
               <span className="animate-cursor text-primary">|</span>
@@ -198,7 +198,7 @@ export function Hero() {
             }`}
           >
             People respond to{" "}
-            <span className="text-foreground font-semibold">moments</span>, not
+            <span className="text-foreground font-semibold">personal touches</span>, not
             messages. Create high-touch engagement campaigns that combine{" "}
             <span className="text-primary font-semibold">
               personalized gestures
@@ -217,7 +217,7 @@ export function Hero() {
             <Link href="/register">
               <Button
                 size="lg"
-                className="relative overflow-hidden bg-gradient-to-r from-green-700 to-emerald-600 hover:from-green-800 hover:to-emerald-700 text-lg h-12 px-8 shadow-lg shadow-green-500/25 group"
+                className="relative overflow-hidden bg-primary hover:bg-primary/90 text-lg h-12 px-8 shadow-lg shadow-primary/25 group"
               >
                 <span className="relative z-10 flex items-center">
                   Start sending personal touches
@@ -272,7 +272,7 @@ export function Hero() {
         >
           <div className="relative mx-auto max-w-5xl">
             {/* Glow effect behind card */}
-            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 rounded-3xl blur-2xl -z-10 animate-pulse-ring" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/15 to-primary/20 rounded-3xl blur-2xl -z-10 animate-pulse-ring" />
 
             <div className="rounded-2xl border bg-card/80 backdrop-blur-sm p-3 shadow-2xl">
               {/* Window chrome */}
@@ -280,7 +280,7 @@ export function Hero() {
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                  <div className="w-3 h-3 rounded-full bg-primary/60" />
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="px-4 py-1 rounded-md bg-muted text-xs text-muted-foreground">

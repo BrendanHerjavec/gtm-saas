@@ -6,8 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GTM SaaS - Go-To-Market Platform",
-  description: "Comprehensive lead management, analytics, and CRM platform",
+  title: "Juniply - High-Touch Gifting & Personalized Outreach",
+  description: "Add high-touch gifting and personalized experiences on top of your existing CRM",
 };
 
 export default function RootLayout({

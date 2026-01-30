@@ -56,6 +56,11 @@ export async function getBudgets(params: GetBudgetsParams = {}) {
 }
 
 export async function getBudget(id: string) {
+  // Handle demo mode
+  if (await isDemoMode()) {
+    return demoBudgets.find(b => b.id === id) || null;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;
@@ -104,6 +109,23 @@ export interface CreateBudgetInput {
 }
 
 export async function createBudget(input: CreateBudgetInput) {
+  // Handle demo mode - simulate creation without database
+  if (await isDemoMode()) {
+    const mockBudget = {
+      id: `demo-budget-${Date.now()}`,
+      ...input,
+      spent: 0,
+      currency: input.currency || "USD",
+      alertSent: false,
+      organizationId: "demo-org-id",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/budget");
+    return mockBudget;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -121,6 +143,23 @@ export async function createBudget(input: CreateBudgetInput) {
 }
 
 export async function updateBudget(id: string, input: Partial<CreateBudgetInput>) {
+  // Handle demo mode - simulate update without database
+  if (await isDemoMode()) {
+    const existingBudget = demoBudgets.find(b => b.id === id);
+    if (!existingBudget) {
+      throw new Error("Budget not found");
+    }
+
+    const mockUpdatedBudget = {
+      ...existingBudget,
+      ...input,
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/budget");
+    return mockUpdatedBudget;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -139,6 +178,12 @@ export async function updateBudget(id: string, input: Partial<CreateBudgetInput>
 }
 
 export async function deleteBudget(id: string) {
+  // Handle demo mode - simulate delete without database
+  if (await isDemoMode()) {
+    revalidatePath("/budget");
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

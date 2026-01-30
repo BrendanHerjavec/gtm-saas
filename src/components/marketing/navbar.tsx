@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Menu, X } from "lucide-react";
+import { Leaf, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -12,8 +12,8 @@ export function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8">
         <Link href="/" className="flex items-center space-x-2">
-          <Sparkles className="h-7 w-7 text-primary" />
-          <span className="text-2xl font-bold">Moments</span>
+          <Leaf className="h-7 w-7 text-primary" />
+          <span className="text-2xl font-bold">Juniply</span>
         </Link>
 
         <div className="hidden md:flex md:items-center md:gap-8">
@@ -42,7 +42,7 @@ export function Navbar() {
             <Button variant="ghost">Sign In</Button>
           </Link>
           <Link href="/register">
-            <Button className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800">
+            <Button className="">
               Get Started
             </Button>
           </Link>
@@ -89,7 +89,7 @@ export function Navbar() {
               <Button variant="ghost" className="w-full">Sign In</Button>
             </Link>
             <Link href="/register">
-              <Button className="w-full bg-gradient-to-r from-green-800 to-emerald-700">
+              <Button className="w-full">
                 Get Started
               </Button>
             </Link>

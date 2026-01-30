@@ -62,7 +62,7 @@ export default function HowItWorksPage() {
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            How Moments Works
+            How Juniply Works
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
             From contact import to closed deal - here&apos;s how to create campaigns
@@ -93,7 +93,7 @@ export default function HowItWorksPage() {
           <Link href="/register">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800"
+              className="bg-primary hover:bg-primary/90"
             >
               Start building your first campaign
               <ArrowRight className="ml-2 h-4 w-4" />

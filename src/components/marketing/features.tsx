@@ -49,7 +49,7 @@ const features = [
     description:
       "Track delivery rates, spend per recipient, and budget usage across all your gifting.",
     color: "#10B981",
-    gradient: "from-emerald-500 to-green-500",
+    gradient: "from-primary to-primary/70",
   },
 ];
 
@@ -114,7 +114,7 @@ export function Features() {
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             Everything you need for{" "}
             <span className="relative">
-              <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 high-touch outreach
               </span>
               <svg

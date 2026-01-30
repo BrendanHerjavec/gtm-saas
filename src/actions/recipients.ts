@@ -138,6 +138,21 @@ export interface CreateRecipientInput {
 }
 
 export async function createRecipient(input: CreateRecipientInput) {
+  // Handle demo mode - simulate creation without database
+  if (await isDemoMode()) {
+    const mockRecipient = {
+      id: `demo-recipient-${Date.now()}`,
+      ...input,
+      organizationId: DEMO_ORG_ID,
+      doNotSend: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/recipients");
+    return mockRecipient;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -155,6 +170,24 @@ export async function createRecipient(input: CreateRecipientInput) {
 }
 
 export async function updateRecipient(id: string, input: Partial<CreateRecipientInput> & { doNotSend?: boolean }) {
+  // Handle demo mode - simulate update without database
+  if (await isDemoMode()) {
+    const existingRecipient = demoRecipients.find(r => r.id === id);
+    if (!existingRecipient) {
+      throw new Error("Recipient not found");
+    }
+
+    const mockUpdatedRecipient = {
+      ...existingRecipient,
+      ...input,
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/recipients");
+    revalidatePath(`/recipients/${id}`);
+    return mockUpdatedRecipient;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -173,7 +206,107 @@ export async function updateRecipient(id: string, input: Partial<CreateRecipient
   return recipient;
 }
 
+export interface BulkCreateResult {
+  imported: number;
+  skipped: number;
+  failed: number;
+  errors: Array<{ row: number; email: string; error: string }>;
+}
+
+export async function bulkCreateRecipients(
+  recipients: CreateRecipientInput[]
+): Promise<BulkCreateResult> {
+  if (recipients.length > 1000) {
+    return {
+      imported: 0,
+      skipped: 0,
+      failed: 0,
+      errors: [{ row: 0, email: "", error: "Maximum 1000 recipients per import" }],
+    };
+  }
+
+  // Demo mode
+  if (await isDemoMode()) {
+    revalidatePath("/recipients");
+    return {
+      imported: recipients.length,
+      skipped: 0,
+      failed: 0,
+      errors: [],
+    };
+  }
+
+  const session = await getAuthSession();
+  if (!session?.user?.organizationId) {
+    throw new Error("Unauthorized");
+  }
+
+  const organizationId = session.user.organizationId;
+  const inputEmails = recipients.map((r) => r.email.toLowerCase());
+
+  // Find existing emails in this org
+  const existing = await prisma.recipient.findMany({
+    where: {
+      organizationId,
+      email: { in: inputEmails, mode: "insensitive" },
+    },
+    select: { email: true },
+  });
+  const existingSet = new Set(existing.map((r) => r.email.toLowerCase()));
+
+  // Separate new vs duplicate
+  const toCreate: CreateRecipientInput[] = [];
+  let skipped = 0;
+
+  for (const recipient of recipients) {
+    if (existingSet.has(recipient.email.toLowerCase())) {
+      skipped++;
+    } else {
+      toCreate.push(recipient);
+    }
+  }
+
+  // Bulk insert
+  let imported = 0;
+  const errors: BulkCreateResult["errors"] = [];
+
+  if (toCreate.length > 0) {
+    try {
+      const result = await prisma.recipient.createMany({
+        data: toCreate.map((r) => ({
+          ...r,
+          organizationId,
+        })),
+        skipDuplicates: true,
+      });
+      imported = result.count;
+    } catch (error) {
+      errors.push({
+        row: 0,
+        email: "",
+        error: error instanceof Error ? error.message : "Database error during import",
+      });
+    }
+  }
+
+  revalidatePath("/recipients");
+
+  return {
+    imported,
+    skipped,
+    failed: errors.length > 0 ? toCreate.length - imported : 0,
+    errors,
+  };
+}
+
 export async function deleteRecipient(id: string) {
+  // Handle demo mode - simulate delete without database
+  if (await isDemoMode()) {
+    // Just revalidate path - the "deletion" is simulated
+    revalidatePath("/recipients");
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

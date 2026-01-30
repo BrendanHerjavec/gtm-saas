@@ -74,7 +74,7 @@ export default function UseCasesPage() {
             Use Cases
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Discover how teams use Moments to create meaningful engagement across
+            Discover how teams use Juniply to create meaningful engagement across
             the customer journey.
           </p>
         </div>
@@ -121,12 +121,12 @@ export default function UseCasesPage() {
 
         <div className="mt-16 text-center">
           <p className="mb-4 text-muted-foreground">
-            Ready to create moments that matter?
+            Ready to make every deal personal?
           </p>
           <Link href="/register">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800"
+              className="bg-primary hover:bg-primary/90"
             >
               Get started free
               <ArrowRight className="ml-2 h-4 w-4" />

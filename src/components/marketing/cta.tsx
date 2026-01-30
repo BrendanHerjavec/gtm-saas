@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Gift, Heart, TreePine } from "lucide-react";
+import { ArrowRight, Leaf, Gift, Heart, TreePine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const floatingEmojis = [
@@ -50,7 +50,7 @@ export function CTA() {
           )}
         >
           {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 animate-gradient bg-[length:200%_200%]" />
+          <div className="absolute inset-0 bg-primary" />
 
           {/* Floating elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -112,7 +112,7 @@ export function CTA() {
                 )}
               >
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white/90 text-sm font-medium">
-                  <Sparkles className="h-4 w-4 animate-pulse" />
+                  <Leaf className="h-4 w-4 animate-pulse" />
                   No credit card required
                 </span>
               </div>
@@ -125,7 +125,7 @@ export function CTA() {
                     : "opacity-0 translate-y-4"
                 )}
               >
-                Ready to create moments that matter?
+                Ready to make every deal personal?
               </h2>
 
               <p
@@ -152,7 +152,7 @@ export function CTA() {
                   <Button
                     size="lg"
                     variant="secondary"
-                    className="relative overflow-hidden bg-white text-green-800 hover:bg-white/90 text-lg h-12 px-8 shadow-lg group"
+                    className="relative overflow-hidden bg-white text-primary hover:bg-white/90 text-lg h-12 px-8 shadow-lg group"
                   >
                     <span className="relative z-10 flex items-center">
                       Get started free

@@ -395,6 +395,28 @@ export async function getTaskDeckStats() {
  * Create a new manual task
  */
 export async function createOutreachTask(input: CreateOutreachTaskInput) {
+  // Demo mode: return mock task
+  if (await isDemoMode()) {
+    const recipient = demoRecipients.find((r) => r.id === input.recipientId) || demoRecipients[0];
+    const mockTask = {
+      id: `demo-task-${Date.now()}`,
+      ...input,
+      organizationId: DEMO_ORG_ID,
+      sortOrder: demoOutreachTasks.length,
+      assignedToId: input.assignedToId || DEMO_USER_ID,
+      status: "PENDING",
+      completedAt: null,
+      completedById: null,
+      skipReason: null,
+      sendId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      recipient,
+    };
+    revalidatePath("/tasks");
+    return mockTask;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId || !session?.user?.id) {
     throw new Error("Unauthorized");
@@ -427,6 +449,15 @@ export async function createOutreachTask(input: CreateOutreachTaskInput) {
  * Update task (status, notes, etc.)
  */
 export async function updateOutreachTask(id: string, input: UpdateOutreachTaskInput) {
+  // Demo mode: return mock updated task
+  if (await isDemoMode()) {
+    const task = demoOutreachTasks.find((t) => t.id === id);
+    if (!task) throw new Error("Task not found");
+    revalidatePath("/tasks");
+    revalidatePath(`/tasks/${id}`);
+    return { ...task, ...input, updatedAt: new Date() };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -449,6 +480,14 @@ export async function updateOutreachTask(id: string, input: UpdateOutreachTaskIn
  * Start working on a task (mark as in progress)
  */
 export async function startOutreachTask(id: string) {
+  // Demo mode: return mock in-progress task
+  if (await isDemoMode()) {
+    const task = demoOutreachTasks.find((t) => t.id === id);
+    if (!task) throw new Error("Task not found");
+    revalidatePath("/tasks");
+    return { ...task, status: "IN_PROGRESS", updatedAt: new Date() };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -472,6 +511,34 @@ export async function startOutreachTask(id: string) {
  * Complete a task (creates a Send and marks complete)
  */
 export async function completeOutreachTask(input: CompleteOutreachTaskInput) {
+  // Demo mode: return mock completed task and send
+  if (await isDemoMode()) {
+    const task = demoOutreachTasks.find((t) => t.id === input.taskId);
+    if (!task) throw new Error("Task not found");
+    const updatedTask = {
+      ...task,
+      status: "COMPLETED",
+      completedAt: new Date(),
+      completedById: DEMO_USER_ID,
+      sendId: `demo-send-${Date.now()}`,
+      updatedAt: new Date(),
+    };
+    const mockSend = {
+      id: updatedTask.sendId,
+      recipientId: task.recipientId,
+      organizationId: DEMO_ORG_ID,
+      userId: DEMO_USER_ID,
+      type: task.taskType,
+      status: "PENDING",
+      message: input.message,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    revalidatePath("/tasks");
+    revalidatePath("/sends");
+    return { task: updatedTask, send: mockSend };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId || !session?.user?.id) {
     throw new Error("Unauthorized");
@@ -526,6 +593,21 @@ export async function completeOutreachTask(input: CompleteOutreachTaskInput) {
  * Skip a task (move to next without completing)
  */
 export async function skipOutreachTask(id: string, reason?: string) {
+  // Demo mode: return mock skipped task
+  if (await isDemoMode()) {
+    const task = demoOutreachTasks.find((t) => t.id === id);
+    if (!task) throw new Error("Task not found");
+    revalidatePath("/tasks");
+    return {
+      ...task,
+      status: "SKIPPED",
+      skipReason: reason || null,
+      completedAt: new Date(),
+      completedById: DEMO_USER_ID,
+      updatedAt: new Date(),
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId || !session?.user?.id) {
     throw new Error("Unauthorized");
@@ -552,6 +634,12 @@ export async function skipOutreachTask(id: string, reason?: string) {
  * Delete a task
  */
 export async function deleteOutreachTask(id: string) {
+  // Demo mode: return mock success
+  if (await isDemoMode()) {
+    revalidatePath("/tasks");
+    return { success: true };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

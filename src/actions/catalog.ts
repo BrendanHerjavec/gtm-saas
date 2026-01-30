@@ -118,6 +118,18 @@ export async function getCatalog(params: GetCatalogParams = {}) {
 }
 
 export async function getGiftItem(id: string) {
+  // Handle demo mode
+  if (await isDemoMode()) {
+    const item = demoGiftItems.find(i => i.id === id);
+    if (!item) return null;
+
+    return {
+      ...item,
+      category: item.categoryId ? demoGiftCategories.find(c => c.id === item.categoryId) : null,
+      vendor: null,
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;
@@ -151,6 +163,22 @@ export interface CreateGiftItemInput {
 }
 
 export async function createGiftItem(input: CreateGiftItemInput) {
+  // Handle demo mode - simulate creation without database
+  if (await isDemoMode()) {
+    const mockItem = {
+      id: `demo-gift-${Date.now()}`,
+      ...input,
+      organizationId: "demo-org-id",
+      inStock: true,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/catalog");
+    return mockItem;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -168,6 +196,23 @@ export async function createGiftItem(input: CreateGiftItemInput) {
 }
 
 export async function updateGiftItem(id: string, input: Partial<CreateGiftItemInput> & { inStock?: boolean; isActive?: boolean }) {
+  // Handle demo mode - simulate update without database
+  if (await isDemoMode()) {
+    const existingItem = demoGiftItems.find(i => i.id === id);
+    if (!existingItem) {
+      throw new Error("Gift item not found");
+    }
+
+    const mockUpdatedItem = {
+      ...existingItem,
+      ...input,
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/catalog");
+    return mockUpdatedItem;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -186,6 +231,12 @@ export async function updateGiftItem(id: string, input: Partial<CreateGiftItemIn
 }
 
 export async function deleteGiftItem(id: string) {
+  // Handle demo mode - simulate delete without database
+  if (await isDemoMode()) {
+    revalidatePath("/catalog");
+    return;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -220,6 +271,20 @@ export async function getCategories() {
 }
 
 export async function createCategory(input: { name: string; description?: string; icon?: string; color?: string }) {
+  // Handle demo mode - simulate creation without database
+  if (await isDemoMode()) {
+    const mockCategory = {
+      id: `demo-category-${Date.now()}`,
+      ...input,
+      organizationId: "demo-org-id",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/catalog");
+    return mockCategory;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -238,6 +303,11 @@ export async function createCategory(input: { name: string; description?: string
 
 // Vendors
 export async function getVendors() {
+  // Handle demo mode - return empty vendors list
+  if (await isDemoMode()) {
+    return [];
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return [];

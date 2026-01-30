@@ -499,7 +499,7 @@ export function InteractiveDemo() {
           <p className="text-muted-foreground mb-4">
             Ready to create your own task decks?
           </p>
-          <Button asChild size="lg" className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800">
+          <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
             <a href="/register">
               Get Started Free
               <Sparkles className="ml-2 h-4 w-4" />

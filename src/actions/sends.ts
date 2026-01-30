@@ -111,6 +111,22 @@ export async function getSends(params: GetSendsParams = {}) {
 }
 
 export async function getSend(id: string) {
+  // Handle demo mode
+  if (await isDemoMode()) {
+    const send = demoSends.find(s => s.id === id);
+    if (!send) return null;
+
+    return {
+      ...send,
+      recipient: demoRecipients.find(r => r.id === send.recipientId),
+      giftItem: send.giftItemId ? demoGiftItems.find(g => g.id === send.giftItemId) : null,
+      campaign: send.campaignId ? demoCampaigns.find(c => c.id === send.campaignId) : null,
+      vendor: null,
+      user: { id: DEMO_USER_ID, name: "Demo User", email: "demo@example.com" },
+      activities: [],
+    };
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     return null;
@@ -150,6 +166,34 @@ export interface CreateSendInput {
 }
 
 export async function createSend(input: CreateSendInput) {
+  // Handle demo mode - simulate creation without database
+  if (await isDemoMode()) {
+    const giftItem = input.giftItemId
+      ? demoGiftItems.find(g => g.id === input.giftItemId)
+      : null;
+    const recipient = demoRecipients.find(r => r.id === input.recipientId);
+    const itemCost = giftItem?.price || 0;
+
+    const mockSend = {
+      id: `demo-send-${Date.now()}`,
+      ...input,
+      organizationId: "demo-org-id",
+      userId: DEMO_USER_ID,
+      status: "PENDING",
+      itemCost,
+      shippingCost: 0,
+      totalCost: itemCost,
+      triggerType: "manual",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      recipient,
+      giftItem,
+    };
+
+    revalidatePath("/sends");
+    return mockSend;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId || !session?.user?.id) {
     throw new Error("Unauthorized");
@@ -186,6 +230,24 @@ export async function createSend(input: CreateSendInput) {
 }
 
 export async function updateSend(id: string, input: Partial<CreateSendInput> & { status?: string }) {
+  // Handle demo mode - simulate update without database
+  if (await isDemoMode()) {
+    const existingSend = demoSends.find(s => s.id === id);
+    if (!existingSend) {
+      throw new Error("Send not found");
+    }
+
+    const mockUpdatedSend = {
+      ...existingSend,
+      ...input,
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/sends");
+    revalidatePath(`/sends/${id}`);
+    return mockUpdatedSend;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");
@@ -205,6 +267,23 @@ export async function updateSend(id: string, input: Partial<CreateSendInput> & {
 }
 
 export async function cancelSend(id: string) {
+  // Handle demo mode - simulate cancel without database
+  if (await isDemoMode()) {
+    const existingSend = demoSends.find(s => s.id === id);
+    if (!existingSend) {
+      throw new Error("Send not found");
+    }
+
+    const mockCancelledSend = {
+      ...existingSend,
+      status: "CANCELLED",
+      updatedAt: new Date(),
+    };
+
+    revalidatePath("/sends");
+    return mockCancelledSend;
+  }
+
   const session = await getAuthSession();
   if (!session?.user?.organizationId) {
     throw new Error("Unauthorized");

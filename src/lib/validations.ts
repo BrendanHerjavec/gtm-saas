@@ -22,6 +22,25 @@ export const updateRecipientSchema = createRecipientSchema.partial().extend({
 export type CreateRecipientInput = z.infer<typeof createRecipientSchema>;
 export type UpdateRecipientInput = z.infer<typeof updateRecipientSchema>;
 
+// CSV import schema - more lenient, transforms empty strings to undefined
+const emptyToUndefined = (v: string | undefined) => (v && v.trim() ? v.trim() : undefined);
+
+export const csvRecipientSchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
+  firstName: z.string().max(100).optional().transform(emptyToUndefined),
+  lastName: z.string().max(100).optional().transform(emptyToUndefined),
+  phone: z.string().max(20).optional().transform(emptyToUndefined),
+  company: z.string().max(200).optional().transform(emptyToUndefined),
+  jobTitle: z.string().max(200).optional().transform(emptyToUndefined),
+  linkedinUrl: z.string().url("Invalid URL").optional()
+    .or(z.literal("")).transform(emptyToUndefined),
+  address: z.string().max(500).optional().transform(emptyToUndefined),
+  notes: z.string().max(2000).optional().transform(emptyToUndefined),
+  tags: z.string().max(500).optional().transform(emptyToUndefined),
+});
+
+export type CsvRecipientInput = z.infer<typeof csvRecipientSchema>;
+
 // Send schemas
 export const sendTypeEnum = z.enum([
   "GIFT",

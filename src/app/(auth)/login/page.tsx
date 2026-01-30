@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Target, Loader2, Play } from "lucide-react";
+import { Leaf, Loader2, Play } from "lucide-react";
 import { enterDemoMode } from "@/actions/demo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +107,7 @@ export default function LoginPage() {
     <Card>
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-center mb-4">
-          <Target className="h-10 w-10 text-primary" />
+          <Leaf className="h-10 w-10 text-primary" />
         </div>
         <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
         <CardDescription className="text-center">

@@ -47,7 +47,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Link href="/sends/new">
-          <Button className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-900 hover:to-emerald-800">
+          <Button className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2 h-4 w-4" />
             New Send
           </Button>

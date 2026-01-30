@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Leaf } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -27,8 +27,8 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">Moments</span>
+              <Leaf className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold">Juniply</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Outbound and customer engagement people actually remember.
@@ -86,7 +86,7 @@ export function Footer() {
 
         <div className="mt-12 border-t pt-8">
           <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Moments. All rights reserved.
+            &copy; {new Date().getFullYear()} Juniply. All rights reserved.
           </p>
         </div>
       </div>
